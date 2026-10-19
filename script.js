@@ -8,6 +8,8 @@ let totalSavingsAllocated = 0;
 let currentType = 'expense';
 let authMode = 'login'; // 'login', 'signup', 'forgot'
 
+const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
+
 // Categories Configuration
 const categories = {
   expense: ['Food & Dining', 'Housing', 'Transport', 'Utilities', 'Entertainment', 'Shopping', 'Health', 'Education', 'Savings Allocation', 'Other Expense'],
@@ -42,9 +44,13 @@ const authTabs = document.getElementById('authTabs');
 const quickProfileSection = document.getElementById('quickProfileSection');
 const quickProfileSelect = document.getElementById('quickProfileSelect');
 const nameFieldGroup = document.getElementById('nameFieldGroup');
+const securityFieldGroup = document.getElementById('securityFieldGroup');
 const pinFieldGroup = document.getElementById('pinFieldGroup');
+const pinLabel = document.getElementById('pinLabel');
 const authName = document.getElementById('authName');
 const authMobile = document.getElementById('authMobile');
+const authSecQuestion = document.getElementById('authSecQuestion');
+const authSecAnswer = document.getElementById('authSecAnswer');
 const authPin = document.getElementById('authPin');
 const authSubmitBtn = document.getElementById('authSubmitBtn');
 const forgotPinBtn = document.getElementById('forgotPinBtn');
@@ -57,6 +63,7 @@ const modalProfileMobile = document.getElementById('modalProfileMobile');
 const modalProfileBudget = document.getElementById('modalProfileBudget');
 const modalProfileSavings = document.getElementById('modalProfileSavings');
 const modalProfileEntries = document.getElementById('modalProfileEntries');
+const modalProfileLastActive = document.getElementById('modalProfileLastActive');
 const profileDisplayName = document.getElementById('profileDisplayName');
 
 const transactionForm = document.getElementById('transactionForm');
@@ -101,7 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   checkAuthStatus();
 
-  // Event Listeners
   typeExpenseBtn.addEventListener('click', () => setType('expense'));
   typeIncomeBtn.addEventListener('click', () => setType('income'));
   transactionForm.addEventListener('submit', handleFormSubmit);
@@ -116,28 +122,50 @@ document.addEventListener('DOMContentLoaded', () => {
   resetBtn.addEventListener('click', resetAllData);
 });
 
-// --- AUTHENTICATION & PROFILE SYSTEM ---
+// --- AUTHENTICATION & SESSION TIMEOUT (15 DAYS) ---
 function refreshProfilesFromStorage() {
   userProfiles = JSON.parse(localStorage.getItem('spideyUserProfiles')) || {};
 }
 
 function checkAuthStatus() {
   refreshProfilesFromStorage();
+
   if (!currentMobile || !userProfiles[currentMobile]) {
-    authCloseBtn.classList.add('hidden');
-    authModal.classList.remove('hidden');
-    populateQuickProfilesDropdown();
-    switchAuthTab('login');
-  } else {
-    authModal.classList.add('hidden');
-    loadUserData();
-    populateCategoryOptions();
-    populateFilterCategories();
-    updateUI();
+    promptLogin();
+    return;
   }
+
+  const user = userProfiles[currentMobile];
+  const lastActive = user.lastLoginTimestamp || 0;
+  const now = Date.now();
+
+  // 15-Day Inactivity Check
+  if (now - lastActive > FIFTEEN_DAYS_MS) {
+    alert("Session expired due to 15 days of inactivity. Please enter your PIN to login.");
+    promptLogin(true);
+    return;
+  }
+
+  user.lastLoginTimestamp = now;
+  saveProfilesToStorage();
+
+  authModal.classList.add('hidden');
+  loadUserData();
+  populateCategoryOptions();
+  populateFilterCategories();
+  updateUI();
 }
 
-// Open Profile Overview Modal
+function promptLogin(requirePinOnly = false) {
+  authCloseBtn.classList.add('hidden');
+  authModal.classList.remove('hidden');
+  populateQuickProfilesDropdown();
+  if (requirePinOnly && currentMobile) {
+    authMobile.value = currentMobile;
+  }
+  switchAuthTab('login');
+}
+
 function openProfileModal() {
   refreshProfilesFromStorage();
   const user = userProfiles[currentMobile];
@@ -150,6 +178,9 @@ function openProfileModal() {
   modalProfileSavings.textContent = formatCurrency(user.totalSavingsAllocated || 0);
   modalProfileEntries.textContent = `${user.transactions ? user.transactions.length : 0} Recorded Entries`;
 
+  const lastActiveDate = user.lastLoginTimestamp ? new Date(user.lastLoginTimestamp).toLocaleDateString() : 'Active Now';
+  modalProfileLastActive.textContent = lastActiveDate;
+
   profileModal.classList.remove('hidden');
 }
 
@@ -159,7 +190,7 @@ function closeProfileModal() {
 
 function openAuthForSwitching() {
   closeProfileModal();
-  authCloseBtn.classList.remove('hidden'); // Show close button so user can back out
+  authCloseBtn.classList.remove('hidden');
   authModal.classList.remove('hidden');
   populateQuickProfilesDropdown();
   switchAuthTab('login');
@@ -201,15 +232,18 @@ function switchAuthTab(mode) {
   authMobile.value = '';
   authPin.value = '';
   authName.value = '';
+  authSecAnswer.value = '';
 
   if (mode === 'login') {
     authTitle.textContent = "Welcome Back, Hero!";
-    authSubtitle.textContent = "Select your profile or enter mobile & PIN";
+    authSubtitle.textContent = "Select profile or enter mobile & PIN";
     authTabs.classList.remove('hidden');
     nameFieldGroup.classList.add('hidden');
+    securityFieldGroup.classList.add('hidden');
     pinFieldGroup.classList.remove('hidden');
     forgotPinBtn.classList.remove('hidden');
     backToLoginBtn.classList.add('hidden');
+    pinLabel.textContent = "4-Digit Security PIN";
     authSubmitBtn.textContent = "Access Vault";
     
     document.getElementById('tabLoginBtn').className = "py-2 text-xs font-bold rounded-lg bg-red-600 text-white transition shadow";
@@ -217,28 +251,32 @@ function switchAuthTab(mode) {
     populateQuickProfilesDropdown();
   } else if (mode === 'signup') {
     authTitle.textContent = "Create Spidey Profile";
-    authSubtitle.textContent = "New user? Set up your personal finance vault";
+    authSubtitle.textContent = "Clean setup for personal finance tracking";
     authTabs.classList.remove('hidden');
     quickProfileSection.classList.add('hidden');
     nameFieldGroup.classList.remove('hidden');
+    securityFieldGroup.classList.remove('hidden');
     pinFieldGroup.classList.remove('hidden');
     forgotPinBtn.classList.add('hidden');
     backToLoginBtn.classList.add('hidden');
+    pinLabel.textContent = "4-Digit Security PIN";
     authSubmitBtn.textContent = "Create Profile & Start";
     authName.required = true;
 
     document.getElementById('tabSignupBtn').className = "py-2 text-xs font-bold rounded-lg bg-blue-600 text-white transition shadow";
     document.getElementById('tabLoginBtn').className = "py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition";
   } else if (mode === 'forgot') {
-    authTitle.textContent = "Reset PIN / Password";
-    authSubtitle.textContent = "Enter your registered mobile & set a new PIN";
+    authTitle.textContent = "Reset PIN Authentication";
+    authSubtitle.textContent = "Verify security answer & set new PIN";
     authTabs.classList.add('hidden');
     quickProfileSection.classList.add('hidden');
     nameFieldGroup.classList.add('hidden');
+    securityFieldGroup.classList.remove('hidden');
     pinFieldGroup.classList.remove('hidden');
     forgotPinBtn.classList.add('hidden');
     backToLoginBtn.classList.remove('hidden');
-    authSubmitBtn.textContent = "Update New PIN";
+    pinLabel.textContent = "Enter NEW 4-Digit PIN";
+    authSubmitBtn.textContent = "Update & Reset PIN";
   }
 }
 
@@ -253,6 +291,8 @@ function handleAuthSubmit(e) {
   const mobile = authMobile.value.trim();
   const pin = authPin.value.trim();
   const name = authName.value.trim();
+  const secQ = authSecQuestion.value;
+  const secA = authSecAnswer.value.trim().toLowerCase();
 
   if (mobile.length !== 10) {
     alert("Please enter a valid 10-digit mobile number.");
@@ -266,15 +306,19 @@ function handleAuthSubmit(e) {
       authMobile.value = mobile;
       return;
     }
+    if (!secA) {
+      alert("Please provide a security answer for password recovery.");
+      return;
+    }
     userProfiles[mobile] = {
       name: name || "Hero",
       pin: pin,
+      secQuestion: secQ,
+      secAnswer: secA,
       monthlyBudget: 25000,
-      totalSavingsAllocated: 5000,
-      transactions: [
-        { id: 1, type: 'income', description: 'Monthly Stipend', amount: 35000, category: 'Salary', date: new Date().toISOString().split('T')[0] },
-        { id: 2, type: 'expense', description: 'Web fluid supplies', amount: 1200, category: 'Shopping', date: new Date().toISOString().split('T')[0] }
-      ]
+      totalSavingsAllocated: 0,
+      lastLoginTimestamp: Date.now(),
+      transactions: []
     };
     saveProfilesToStorage();
     loginUser(mobile);
@@ -286,7 +330,7 @@ function handleAuthSubmit(e) {
       return;
     }
     if (userProfiles[mobile].pin !== pin) {
-      alert("Incorrect PIN or Password! Try again or click Forgot PIN.");
+      alert("Incorrect PIN! Try again or click Forgot PIN.");
       return;
     }
     loginUser(mobile);
@@ -295,16 +339,25 @@ function handleAuthSubmit(e) {
       alert("Mobile number not registered.");
       return;
     }
-    userProfiles[mobile].pin = pin;
+    const user = userProfiles[mobile];
+    if (user.secAnswer !== secA) {
+      alert("Security answer verification failed! Please enter the correct answer.");
+      return;
+    }
+    user.pin = pin;
     saveProfilesToStorage();
-    alert("PIN successfully reset! Please login with your new PIN.");
-    switchAuthTab('login');
+    alert("PIN successfully reset! Logging you in...");
+    loginUser(mobile);
   }
 }
 
 function loginUser(mobile) {
   currentMobile = mobile;
   localStorage.setItem('currentActiveMobile', mobile);
+  if (userProfiles[mobile]) {
+    userProfiles[mobile].lastLoginTimestamp = Date.now();
+    saveProfilesToStorage();
+  }
   authModal.classList.add('hidden');
   checkAuthStatus();
 }
@@ -315,7 +368,7 @@ function logoutProfile() {
   checkAuthStatus();
 }
 
-// --- DATA MANAGEMENT PER PROFILE ---
+// --- USER DATA & STORAGE ---
 function loadUserData() {
   refreshProfilesFromStorage();
   const user = userProfiles[currentMobile];
@@ -336,7 +389,8 @@ function saveToLocalStorage() {
     ...userProfiles[currentMobile],
     monthlyBudget,
     totalSavingsAllocated,
-    transactions
+    transactions,
+    lastLoginTimestamp: Date.now()
   };
   saveProfilesToStorage();
 }
@@ -345,7 +399,7 @@ function saveProfilesToStorage() {
   localStorage.setItem('spideyUserProfiles', JSON.stringify(userProfiles));
 }
 
-// --- APP LOGIC ---
+// --- APP LOGIC & UI UPDATES ---
 function setType(type) {
   currentType = type;
   if (type === 'expense') {
