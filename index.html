@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   
   <!-- Primary SEO Meta Tags -->
-  <title>Spidey Spend Tracker</title>
+  <title>Spidey Spend Tracker | Secure Personal Expense & Savings Manager</title>
   <meta name="title" content="Spidey Spend Tracker | Secure Personal Expense & Savings Manager">
-  <meta name="description" content="Manage your income, track daily expenses, set monthly budget limits, and secure your personal savings pool with Spidey Spend Tracker. Multi-profile expense & CRUD financial tracker.">
-  <meta name="keywords" content="expense tracker, personal finance app, budget planner, savings tracker, multi-user expense tracker, crud finance app">
+  <meta name="description" content="Manage your income, track daily expenses, set monthly budget limits, and secure your personal savings pool with Spidey Spend Tracker. Mobile-responsive CRUD financial web application.">
+  <meta name="keywords" content="expense tracker, personal finance app, budget planner, savings tracker, mobile responsive finance tool, crud finance app">
   <meta name="author" content="Berlin S P">
   <meta name="robots" content="index, follow">
 
@@ -25,10 +25,10 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased spidey-bg relative overflow-x-hidden">
 
-  <!-- AUTHENTICATION MODAL (Profile C-R-U-D) -->
-  <div id="authModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 hidden">
-    <div class="spidey-card w-full max-w-md rounded-2xl p-6 sm:p-8 shadow-2xl border border-red-500/30 animate-slide-in relative">
-      <button id="authCloseBtn" onclick="closeAuthModal()" class="hidden absolute top-4 right-4 text-slate-400 hover:text-white transition p-2" title="Back to Dashboard">
+  <!-- AUTHENTICATION MODAL -->
+  <div id="authModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto hidden">
+    <div class="spidey-card w-full max-w-md rounded-2xl p-5 sm:p-8 shadow-2xl border border-red-500/30 animate-slide-in relative my-auto max-h-[90vh] overflow-y-auto">
+      <button id="authCloseBtn" onclick="closeAuthModal()" class="hidden absolute top-4 right-4 text-slate-400 hover:text-white transition p-2 min-w-[44px] min-h-[44px] flex items-center justify-center" title="Back to Dashboard">
         <i class="fa-solid fa-xmark text-lg"></i>
       </button>
 
@@ -36,14 +36,14 @@
         <span class="spidey-pulse-icon p-3 bg-red-600/20 border border-red-500/40 rounded-2xl text-red-500 inline-block mb-3 text-2xl">
           <i class="fa-solid fa-spider"></i>
         </span>
-        <h2 id="authTitle" class="text-2xl font-extrabold text-white">Spidey Finance Portal</h2>
+        <h2 id="authTitle" class="text-xl sm:text-2xl font-extrabold text-white">Spidey Finance Portal</h2>
         <p id="authSubtitle" class="text-xs text-slate-400 mt-1">Select your profile or enter your mobile number</p>
       </div>
 
-      <!-- Quick Profile Selector (Read Profile) -->
+      <!-- Quick Profile Selector -->
       <div id="quickProfileSection" class="mb-5 hidden">
         <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Switch to Saved Profile</label>
-        <select id="quickProfileSelect" onchange="quickSelectProfile(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
+        <select id="quickProfileSelect" onchange="quickSelectProfile(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-500">
           <option value="">-- Select Saved Profile --</option>
         </select>
         <div class="relative flex py-2 items-center">
@@ -55,29 +55,29 @@
 
       <!-- Tab Selectors -->
       <div id="authTabs" class="grid grid-cols-2 gap-2 mb-6 bg-slate-900/80 p-1.5 rounded-xl border border-slate-800">
-        <button type="button" id="tabLoginBtn" onclick="switchAuthTab('login')" class="py-2 text-xs font-bold rounded-lg bg-red-600 text-white transition shadow">Login</button>
-        <button type="button" id="tabSignupBtn" onclick="switchAuthTab('signup')" class="py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition">Sign Up</button>
+        <button type="button" id="tabLoginBtn" onclick="switchAuthTab('login')" class="py-2.5 text-xs font-bold rounded-lg bg-red-600 text-white transition shadow min-h-[40px]">Login</button>
+        <button type="button" id="tabSignupBtn" onclick="switchAuthTab('signup')" class="py-2.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition min-h-[40px]">Sign Up</button>
       </div>
 
       <!-- Auth Forms -->
       <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
         <div id="nameFieldGroup" class="hidden">
           <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Your Full Name</label>
-          <input type="text" id="authName" placeholder="e.g. Peter Parker" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
+          <input type="text" id="authName" placeholder="e.g. Peter Parker" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-500">
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Mobile Number</label>
           <div class="relative">
-            <span class="absolute left-3.5 top-3 text-xs text-slate-500 font-bold">+91</span>
-            <input type="tel" id="authMobile" placeholder="9876543210" pattern="[0-9]{10}" maxlength="10" required class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-12 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500">
+            <span class="absolute left-3.5 top-3.5 text-xs text-slate-500 font-bold">+91</span>
+            <input type="tel" id="authMobile" placeholder="9876543210" pattern="[0-9]{10}" maxlength="10" required class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-12 pr-4 py-3 text-sm text-white focus:outline-none focus:border-red-500">
           </div>
         </div>
 
         <div id="securityFieldGroup" class="hidden space-y-3">
           <div>
             <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Security Question</label>
-            <select id="authSecQuestion" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-red-500">
+            <select id="authSecQuestion" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-3 text-xs text-white focus:outline-none focus:border-red-500">
               <option value="pet">What was the name of your first pet?</option>
               <option value="hero">Who is your favorite superhero?</option>
               <option value="city">In what city were you born?</option>
@@ -86,33 +86,33 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Security Answer</label>
-            <input type="text" id="authSecAnswer" placeholder="Your secret answer" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-red-500">
+            <input type="text" id="authSecAnswer" placeholder="Your secret answer" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-red-500">
           </div>
         </div>
 
         <div id="pinFieldGroup">
           <label id="pinLabel" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">4-Digit Security PIN</label>
-          <input type="password" id="authPin" placeholder="••••" maxlength="6" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500 tracking-widest">
+          <input type="password" id="authPin" placeholder="••••" maxlength="6" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-500 tracking-widest">
         </div>
 
-        <div class="flex items-center justify-between text-xs">
-          <button type="button" id="forgotPinBtn" onclick="switchToForgotPin()" class="text-blue-400 hover:underline">Forgot PIN?</button>
-          <button type="button" id="backToLoginBtn" onclick="switchAuthTab('login')" class="hidden text-slate-400 hover:text-white flex items-center gap-1">
+        <div class="flex items-center justify-between text-xs py-1">
+          <button type="button" id="forgotPinBtn" onclick="switchToForgotPin()" class="text-blue-400 hover:underline min-h-[36px] flex items-center">Forgot PIN?</button>
+          <button type="button" id="backToLoginBtn" onclick="switchAuthTab('login')" class="hidden text-slate-400 hover:text-white flex items-center gap-1 min-h-[36px]">
             <i class="fa-solid fa-arrow-left text-[10px]"></i> Back to Login
           </button>
         </div>
 
-        <button type="submit" id="authSubmitBtn" class="spidey-btn-glow w-full bg-gradient-to-r from-red-600 to-blue-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg mt-2 transition">
+        <button type="submit" id="authSubmitBtn" class="spidey-btn-glow w-full bg-gradient-to-r from-red-600 to-blue-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg mt-2 transition min-h-[48px]">
           Access Vault
         </button>
       </form>
     </div>
   </div>
 
-  <!-- SAVINGS CRUD MODAL (Create/Update/Delete Savings) -->
-  <div id="savingsModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-4 hidden">
-    <div class="spidey-card w-full max-w-md rounded-2xl p-6 shadow-2xl border border-indigo-500/40 animate-slide-in relative">
-      <button onclick="closeSavingsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition p-2">
+  <!-- SAVINGS CRUD MODAL -->
+  <div id="savingsModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto hidden">
+    <div class="spidey-card w-full max-w-md rounded-2xl p-5 sm:p-6 shadow-2xl border border-indigo-500/40 animate-slide-in relative my-auto max-h-[90vh] overflow-y-auto">
+      <button onclick="closeSavingsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition p-2 min-w-[44px] min-h-[44px] flex items-center justify-center">
         <i class="fa-solid fa-xmark text-lg"></i>
       </button>
 
@@ -121,46 +121,45 @@
           <i class="fa-solid fa-piggy-bank text-xl"></i>
         </div>
         <div>
-          <h3 class="text-lg font-bold text-white">Savings Vault CRUD Operations</h3>
+          <h3 class="text-base sm:text-lg font-bold text-white">Savings Vault CRUD</h3>
           <p class="text-xs text-slate-400">Current Vault: <span id="currentSavingsDisplay" class="font-bold text-indigo-400">₹0.00</span></p>
         </div>
       </div>
 
-      <!-- Math Operation Selectors -->
-      <div class="grid grid-cols-3 gap-2 mb-4 bg-slate-900 p-1.5 rounded-xl border border-slate-800 text-xs font-bold">
-        <button type="button" id="savOpAdd" onclick="setSavingsOp('add')" class="py-2 rounded-lg bg-indigo-600 text-white transition flex items-center justify-center gap-1">
-          <i class="fa-solid fa-plus"></i> Deposit (+)
+      <div class="grid grid-cols-3 gap-2 mb-4 bg-slate-900 p-1.5 rounded-xl border border-slate-800 text-[11px] sm:text-xs font-bold">
+        <button type="button" id="savOpAdd" onclick="setSavingsOp('add')" class="py-2.5 rounded-lg bg-indigo-600 text-white transition flex items-center justify-center gap-1">
+          <i class="fa-solid fa-plus"></i> Deposit
         </button>
-        <button type="button" id="savOpSub" onclick="setSavingsOp('sub')" class="py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1">
-          <i class="fa-solid fa-minus"></i> Withdraw (-)
+        <button type="button" id="savOpSub" onclick="setSavingsOp('sub')" class="py-2.5 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1">
+          <i class="fa-solid fa-minus"></i> Withdraw
         </button>
-        <button type="button" id="savOpSet" onclick="setSavingsOp('set')" class="py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1">
-          <i class="fa-solid fa-equals"></i> Reset Goal (=)
+        <button type="button" id="savOpSet" onclick="setSavingsOp('set')" class="py-2.5 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1">
+          <i class="fa-solid fa-equals"></i> Goal
         </button>
       </div>
 
       <form onsubmit="executeSavingsMath(event)" class="space-y-4">
         <div>
           <label id="savAmountLabel" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Deposit Amount (₹)</label>
-          <input type="number" id="savAmountInput" placeholder="0.00" step="0.01" min="0.01" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+          <input type="number" id="savAmountInput" placeholder="0.00" step="0.01" min="0.01" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500">
         </div>
 
-        <div id="savRecordTransactionGroup" class="flex items-center gap-2 text-xs text-slate-300">
-          <input type="checkbox" id="savRecordTransaction" class="rounded border-slate-800 bg-slate-900 text-indigo-500 focus:ring-0">
+        <div id="savRecordTransactionGroup" class="flex items-center gap-2.5 text-xs text-slate-300 py-1">
+          <input type="checkbox" id="savRecordTransaction" class="w-4 h-4 rounded border-slate-800 bg-slate-900 text-indigo-500 focus:ring-0">
           <label for="savRecordTransaction" class="cursor-pointer">Log as entry in Transaction History</label>
         </div>
 
-        <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition">
+        <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition min-h-[48px]">
           Execute Savings Operation
         </button>
       </form>
     </div>
   </div>
 
-  <!-- MONTHLY BUDGET CRUD MODAL (Update / Re-calculate Budget) -->
-  <div id="budgetModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-4 hidden">
-    <div class="spidey-card w-full max-w-md rounded-2xl p-6 shadow-2xl border border-amber-500/40 animate-slide-in relative">
-      <button onclick="closeBudgetModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition p-2">
+  <!-- MONTHLY BUDGET CRUD MODAL -->
+  <div id="budgetModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto hidden">
+    <div class="spidey-card w-full max-w-md rounded-2xl p-5 sm:p-6 shadow-2xl border border-amber-500/40 animate-slide-in relative my-auto max-h-[90vh] overflow-y-auto">
+      <button onclick="closeBudgetModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition p-2 min-w-[44px] min-h-[44px] flex items-center justify-center">
         <i class="fa-solid fa-xmark text-lg"></i>
       </button>
 
@@ -169,44 +168,44 @@
           <i class="fa-solid fa-calculator text-xl"></i>
         </div>
         <div>
-          <h3 class="text-lg font-bold text-white">Monthly Budget Limit Operations</h3>
+          <h3 class="text-base sm:text-lg font-bold text-white">Monthly Budget CRUD</h3>
           <p class="text-xs text-slate-400">Current Limit: <span id="currentBudgetDisplay" class="font-bold text-amber-400">₹25,000</span></p>
         </div>
       </div>
 
-      <div class="grid grid-cols-3 gap-2 mb-4 bg-slate-900 p-1.5 rounded-xl border border-slate-800 text-xs font-bold">
-        <button type="button" id="budOpAdd" onclick="setBudgetOp('add')" class="py-2 rounded-lg bg-amber-600 text-white transition flex items-center justify-center gap-1">
-          <i class="fa-solid fa-plus"></i> Increase (+)
+      <div class="grid grid-cols-3 gap-2 mb-4 bg-slate-900 p-1.5 rounded-xl border border-slate-800 text-[11px] sm:text-xs font-bold">
+        <button type="button" id="budOpAdd" onclick="setBudgetOp('add')" class="py-2.5 rounded-lg bg-amber-600 text-white transition flex items-center justify-center gap-1">
+          <i class="fa-solid fa-plus"></i> Increase
         </button>
-        <button type="button" id="budOpSub" onclick="setBudgetOp('sub')" class="py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1">
-          <i class="fa-solid fa-minus"></i> Decrease (-)
+        <button type="button" id="budOpSub" onclick="setBudgetOp('sub')" class="py-2.5 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1">
+          <i class="fa-solid fa-minus"></i> Decrease
         </button>
-        <button type="button" id="budOpSet" onclick="setBudgetOp('set')" class="py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1">
-          <i class="fa-solid fa-equals"></i> Set Limit (=)
+        <button type="button" id="budOpSet" onclick="setBudgetOp('set')" class="py-2.5 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1">
+          <i class="fa-solid fa-equals"></i> Limit
         </button>
       </div>
 
       <form onsubmit="executeBudgetMath(event)" class="space-y-4">
         <div>
           <label id="budAmountLabel" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Increase Amount (₹)</label>
-          <input type="number" id="budAmountInput" placeholder="0.00" step="0.01" min="0.01" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+          <input type="number" id="budAmountInput" placeholder="0.00" step="0.01" min="0.01" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-500">
         </div>
 
-        <button type="submit" class="w-full bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-700 hover:to-rose-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition">
+        <button type="submit" class="w-full bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-700 hover:to-rose-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition min-h-[48px]">
           Update Monthly Limit
         </button>
       </form>
     </div>
   </div>
 
-  <!-- TRANSACTION UPDATE MODAL (Full Edit functionality) -->
-  <div id="editTxModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-4 hidden">
-    <div class="spidey-card w-full max-w-md rounded-2xl p-6 shadow-2xl border border-blue-500/40 animate-slide-in relative">
-      <button onclick="closeEditTxModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition p-2">
+  <!-- TRANSACTION UPDATE (EDIT) MODAL -->
+  <div id="editTxModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto hidden">
+    <div class="spidey-card w-full max-w-md rounded-2xl p-5 sm:p-6 shadow-2xl border border-blue-500/40 animate-slide-in relative my-auto max-h-[90vh] overflow-y-auto">
+      <button onclick="closeEditTxModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition p-2 min-w-[44px] min-h-[44px] flex items-center justify-center">
         <i class="fa-solid fa-xmark text-lg"></i>
       </button>
 
-      <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+      <h3 class="text-base sm:text-lg font-bold text-white mb-4 flex items-center gap-2">
         <i class="fa-solid fa-pen-to-square text-blue-400"></i> Edit Transaction Record
       </h3>
 
@@ -215,7 +214,7 @@
         
         <div>
           <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Transaction Type</label>
-          <select id="editTxType" onchange="populateEditCategoryOptions()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+          <select id="editTxType" onchange="populateEditCategoryOptions()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500">
             <option value="expense">Expense (-)</option>
             <option value="income">Income (+)</option>
           </select>
@@ -223,27 +222,27 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Title / Description</label>
-          <input type="text" id="editTxDesc" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+          <input type="text" id="editTxDesc" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500">
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Amount (₹)</label>
-            <input type="number" id="editTxAmount" step="0.01" min="0.01" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+            <input type="number" id="editTxAmount" step="0.01" min="0.01" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500">
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Date</label>
-            <input type="date" id="editTxDate" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+            <input type="date" id="editTxDate" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:border-blue-500">
           </div>
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Category</label>
-          <select id="editTxCategory" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+          <select id="editTxCategory" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500">
           </select>
         </div>
 
-        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition">
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition min-h-[48px]">
           Save Changes
         </button>
       </form>
@@ -251,9 +250,9 @@
   </div>
 
   <!-- USER PROFILE OVERVIEW MODAL -->
-  <div id="profileModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-4 hidden">
-    <div class="spidey-card w-full max-w-md rounded-2xl p-6 sm:p-8 shadow-2xl border border-red-500/30 animate-slide-in relative">
-      <button onclick="closeProfileModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition p-2">
+  <div id="profileModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto hidden">
+    <div class="spidey-card w-full max-w-md rounded-2xl p-5 sm:p-8 shadow-2xl border border-red-500/30 animate-slide-in relative my-auto max-h-[90vh] overflow-y-auto">
+      <button onclick="closeProfileModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition p-2 min-w-[44px] min-h-[44px] flex items-center justify-center">
         <i class="fa-solid fa-xmark text-lg"></i>
       </button>
 
@@ -261,11 +260,11 @@
         <div class="w-20 h-20 bg-gradient-to-tr from-red-600 to-blue-600 rounded-full flex items-center justify-center text-3xl font-extrabold text-white mx-auto mb-3 shadow-[0_0_20px_rgba(239,68,68,0.4)]">
           <span id="profileAvatarInitial">P</span>
         </div>
-        <h3 id="modalProfileName" class="text-2xl font-extrabold text-white">Peter Parker</h3>
+        <h3 id="modalProfileName" class="text-xl sm:text-2xl font-extrabold text-white">Peter Parker</h3>
         <p id="modalProfileMobile" class="text-xs text-red-400 font-semibold mt-0.5">+91 9876543210</p>
       </div>
 
-      <div class="space-y-3 bg-slate-900/80 p-4 rounded-xl border border-slate-800 mb-6 text-sm">
+      <div class="space-y-3 bg-slate-900/80 p-4 rounded-xl border border-slate-800 mb-6 text-xs sm:text-sm">
         <div class="flex justify-between items-center pb-2 border-b border-slate-800">
           <span class="text-slate-400">Monthly Budget Limit:</span>
           <span id="modalProfileBudget" class="font-bold text-amber-400">₹25,000</span>
@@ -285,10 +284,10 @@
       </div>
 
       <div class="space-y-3">
-        <button onclick="openAuthForSwitching()" class="w-full bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 hover:border-red-500 font-bold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 text-sm">
+        <button onclick="openAuthForSwitching()" class="w-full bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 hover:border-red-500 font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 text-sm min-h-[44px]">
           <i class="fa-solid fa-user-gear text-red-400"></i> Switch Profile Account
         </button>
-        <button onclick="closeProfileModal()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 text-sm">
+        <button onclick="closeProfileModal()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 text-sm min-h-[44px]">
           <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
         </button>
       </div>
@@ -296,37 +295,37 @@
   </div>
 
   <!-- Ambient Background Glows -->
-  <div class="ambient-glow-1 absolute top-0 left-1/4 w-96 h-96 bg-red-600/15 rounded-full blur-3xl pointer-events-none"></div>
-  <div class="ambient-glow-2 absolute top-1/3 right-1/4 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
+  <div class="ambient-glow-1 absolute top-0 left-1/4 w-72 sm:w-96 h-72 sm:h-96 bg-red-600/15 rounded-full blur-3xl pointer-events-none"></div>
+  <div class="ambient-glow-2 absolute top-1/3 right-1/4 w-72 sm:w-96 h-72 sm:h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
 
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+  <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 relative z-10">
     
     <!-- Header -->
-    <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-red-500/20 pb-6">
+    <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 sm:mb-8 gap-4 border-b border-red-500/20 pb-5">
       <div>
-        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-wide bg-gradient-to-r from-red-500 via-rose-400 to-blue-500 bg-clip-text text-transparent flex items-center gap-3">
+        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-wide bg-gradient-to-r from-red-500 via-rose-400 to-blue-500 bg-clip-text text-transparent flex items-center gap-3">
           <span class="spidey-pulse-icon p-2.5 bg-red-600/20 border border-red-500/40 rounded-xl text-red-500 inline-block">
             <i class="fa-solid fa-spider"></i>
           </span> 
           SPIDEY SPEND TRACKER
         </h1>
-        <p class="text-slate-400 text-sm mt-1">Welcome back, <span id="profileDisplayName" class="text-white font-bold">Hero</span>! Manage funds & savings securely.</p>
+        <p class="text-slate-400 text-xs sm:text-sm mt-1">Welcome back, <span id="profileDisplayName" class="text-white font-bold">Hero</span>! Manage funds securely.</p>
       </div>
 
-      <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-        <button id="exportBtn" class="bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs sm:text-sm font-semibold px-3.5 py-2.5 rounded-xl border border-blue-500/30 transition flex items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+        <button id="exportBtn" class="flex-1 sm:flex-none bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs sm:text-sm font-semibold px-3.5 py-3 rounded-xl border border-blue-500/30 transition flex items-center justify-center gap-2 min-h-[44px]">
           <i class="fa-solid fa-file-csv text-blue-400"></i> Export CSV
         </button>
-        <button id="viewProfileBtn" onclick="openProfileModal()" class="bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs sm:text-sm font-semibold px-3.5 py-2.5 rounded-xl border border-slate-700 hover:border-red-500/50 transition flex items-center gap-2">
+        <button id="viewProfileBtn" onclick="openProfileModal()" class="flex-1 sm:flex-none bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs sm:text-sm font-semibold px-3.5 py-3 rounded-xl border border-slate-700 hover:border-red-500/50 transition flex items-center justify-center gap-2 min-h-[44px]">
           <i class="fa-solid fa-circle-user text-red-400 text-base"></i> My Profile
         </button>
-        <button id="resetBtn" class="bg-red-950/40 hover:bg-red-900/50 text-red-300 text-xs sm:text-sm font-semibold px-3.5 py-2.5 rounded-xl border border-red-800/50 transition flex items-center gap-2">
+        <button id="resetBtn" class="flex-1 sm:flex-none bg-red-950/40 hover:bg-red-900/50 text-red-300 text-xs sm:text-sm font-semibold px-3.5 py-3 rounded-xl border border-red-800/50 transition flex items-center justify-center gap-2 min-h-[44px]">
           <i class="fa-solid fa-trash-arrow-up"></i> Reset Data
         </button>
       </div>
     </header>
 
-    <!-- Dynamic Budget Alert Banner -->
+    <!-- Budget Alert Banner -->
     <div id="budgetAlert" class="hidden mb-6 p-4 rounded-xl border flex items-center justify-between transition-all duration-500 backdrop-blur-md animate-slide-in">
       <div class="flex items-center gap-3">
         <i id="alertIcon" class="fa-solid text-xl"></i>
@@ -338,108 +337,108 @@
     </div>
 
     <!-- Analytics Dashboard Overview -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 bg-slate-900/50 p-4 rounded-2xl border border-slate-800/80 text-xs">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6 bg-slate-900/50 p-3.5 sm:p-4 rounded-2xl border border-slate-800/80 text-xs">
       <div>
-        <span class="text-slate-400 block">Savings Rate</span>
-        <span id="kpiSavingsRate" class="text-base font-extrabold text-indigo-400">0%</span>
+        <span class="text-slate-400 block text-[11px] sm:text-xs">Savings Rate</span>
+        <span id="kpiSavingsRate" class="text-sm sm:text-base font-extrabold text-indigo-400">0%</span>
       </div>
       <div>
-        <span class="text-slate-400 block">Avg Daily Spend</span>
-        <span id="kpiDailyAvg" class="text-base font-extrabold text-rose-400">₹0.00</span>
+        <span class="text-slate-400 block text-[11px] sm:text-xs">Avg Daily Spend</span>
+        <span id="kpiDailyAvg" class="text-sm sm:text-base font-extrabold text-rose-400">₹0.00</span>
       </div>
       <div>
-        <span class="text-slate-400 block">Current Month Spend</span>
-        <span id="kpiMonthSpend" class="text-base font-extrabold text-amber-400">₹0.00</span>
+        <span class="text-slate-400 block text-[11px] sm:text-xs">Current Month Spend</span>
+        <span id="kpiMonthSpend" class="text-sm sm:text-base font-extrabold text-amber-400">₹0.00</span>
       </div>
       <div>
-        <span class="text-slate-400 block">Financial Health Score</span>
-        <span id="kpiHealthScore" class="text-base font-extrabold text-emerald-400">100 / 100</span>
+        <span class="text-slate-400 block text-[11px] sm:text-xs">Financial Health</span>
+        <span id="kpiHealthScore" class="text-sm sm:text-base font-extrabold text-emerald-400">100 / 100</span>
       </div>
     </div>
 
     <!-- Summary CRUD Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4 mb-8">
       
       <!-- Balance Card -->
-      <div class="spidey-card rounded-2xl p-5 shadow-xl backdrop-blur-md relative overflow-hidden group">
+      <div class="spidey-card rounded-2xl p-4 sm:p-5 shadow-xl backdrop-blur-md relative overflow-hidden group">
         <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/30 transition"></div>
-        <div class="flex justify-between items-center mb-3">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Net Balance</span>
+        <div class="flex justify-between items-center mb-2 sm:mb-3">
+          <span class="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Net Balance</span>
           <span class="p-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl"><i class="fa-solid fa-scale-balanced"></i></span>
         </div>
-        <div id="totalBalance" class="text-2xl font-extrabold text-white">₹0.00</div>
-        <p class="text-xs text-slate-400 mt-2">Overall funds remaining</p>
+        <div id="totalBalance" class="text-xl sm:text-2xl font-extrabold text-white">₹0.00</div>
+        <p class="text-[11px] sm:text-xs text-slate-400 mt-1.5 sm:mt-2">Overall funds remaining</p>
       </div>
 
       <!-- Savings CRUD Card -->
-      <div class="spidey-card rounded-2xl p-5 shadow-xl backdrop-blur-md relative overflow-hidden group border-indigo-500/30">
+      <div class="spidey-card rounded-2xl p-4 sm:p-5 shadow-xl backdrop-blur-md relative overflow-hidden group border-indigo-500/30">
         <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-indigo-500/10 rounded-full blur-xl group-hover:bg-indigo-500/30 transition"></div>
         <div class="flex justify-between items-center mb-2">
-          <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Total Savings</span>
-          <button onclick="openSavingsModal()" class="text-xs text-indigo-400 hover:text-white bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-500/20 transition flex items-center gap-1 font-bold"><i class="fa-solid fa-pen-to-square"></i> CRUD</button>
+          <span class="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-indigo-400">Total Savings</span>
+          <button onclick="openSavingsModal()" class="text-[11px] text-indigo-400 hover:text-white bg-indigo-500/10 px-2.5 py-1.5 rounded-lg border border-indigo-500/20 transition flex items-center gap-1 font-bold min-h-[32px]"><i class="fa-solid fa-pen-to-square"></i> CRUD</button>
         </div>
-        <div id="totalSavings" class="text-2xl font-extrabold text-indigo-400">₹0.00</div>
-        <p id="savingsSubtext" class="text-xs text-slate-400 mt-2">Separated from expense pool</p>
+        <div id="totalSavings" class="text-xl sm:text-2xl font-extrabold text-indigo-400">₹0.00</div>
+        <p class="text-[11px] sm:text-xs text-slate-400 mt-1.5 sm:mt-2">Separated from expense pool</p>
       </div>
 
       <!-- Income CRUD Card -->
-      <div class="spidey-card rounded-2xl p-5 shadow-xl backdrop-blur-md relative overflow-hidden group">
+      <div class="spidey-card rounded-2xl p-4 sm:p-5 shadow-xl backdrop-blur-md relative overflow-hidden group">
         <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/30 transition"></div>
-        <div class="flex justify-between items-center mb-3">
-          <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Total Income</span>
-          <button onclick="setType('income')" class="text-[10px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold px-2.5 py-1 rounded-lg border border-emerald-500/20 transition">+ Add</button>
+        <div class="flex justify-between items-center mb-2 sm:mb-3">
+          <span class="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-emerald-400">Total Income</span>
+          <button onclick="setType('income')" class="text-[11px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold px-2.5 py-1.5 rounded-lg border border-emerald-500/20 transition min-h-[32px] flex items-center">+ Add</button>
         </div>
-        <div id="totalIncome" class="text-2xl font-extrabold text-emerald-400">₹0.00</div>
-        <p class="text-xs text-slate-400 mt-2">Filtered earnings total</p>
+        <div id="totalIncome" class="text-xl sm:text-2xl font-extrabold text-emerald-400">₹0.00</div>
+        <p class="text-[11px] sm:text-xs text-slate-400 mt-1.5 sm:mt-2">Filtered earnings total</p>
       </div>
 
       <!-- Expense CRUD Card -->
-      <div class="spidey-card rounded-2xl p-5 shadow-xl backdrop-blur-md relative overflow-hidden group">
+      <div class="spidey-card rounded-2xl p-4 sm:p-5 shadow-xl backdrop-blur-md relative overflow-hidden group">
         <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-red-500/10 rounded-full blur-xl group-hover:bg-red-500/30 transition"></div>
-        <div class="flex justify-between items-center mb-3">
-          <span class="text-xs font-bold uppercase tracking-wider text-red-400">Total Expenses</span>
-          <button onclick="setType('expense')" class="text-[10px] bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold px-2.5 py-1 rounded-lg border border-red-500/20 transition">+ Add</button>
+        <div class="flex justify-between items-center mb-2 sm:mb-3">
+          <span class="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-red-400">Total Expenses</span>
+          <button onclick="setType('expense')" class="text-[11px] bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold px-2.5 py-1.5 rounded-lg border border-red-500/20 transition min-h-[32px] flex items-center">+ Add</button>
         </div>
-        <div id="totalExpense" class="text-2xl font-extrabold text-red-400">₹0.00</div>
-        <p class="text-xs text-slate-400 mt-2">Filtered spending total</p>
+        <div id="totalExpense" class="text-xl sm:text-2xl font-extrabold text-red-400">₹0.00</div>
+        <p class="text-[11px] sm:text-xs text-slate-400 mt-1.5 sm:mt-2">Filtered spending total</p>
       </div>
 
       <!-- Monthly Budget CRUD Card -->
-      <div class="spidey-card rounded-2xl p-5 shadow-xl backdrop-blur-md relative overflow-hidden group">
+      <div class="spidey-card rounded-2xl p-4 sm:p-5 shadow-xl backdrop-blur-md relative overflow-hidden group sm:col-span-2 lg:col-span-1">
         <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/30 transition"></div>
         <div class="flex justify-between items-center mb-2">
-          <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Monthly Budget</span>
-          <button onclick="openBudgetModal()" class="text-xs text-amber-400 hover:text-white bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20 transition flex items-center gap-1 font-bold"><i class="fa-solid fa-pen-to-square"></i> CRUD</button>
+          <span class="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-amber-400">Monthly Budget</span>
+          <button onclick="openBudgetModal()" class="text-[11px] text-amber-400 hover:text-white bg-amber-500/10 px-2.5 py-1.5 rounded-lg border border-amber-500/20 transition flex items-center gap-1 font-bold min-h-[32px]"><i class="fa-solid fa-pen-to-square"></i> CRUD</button>
         </div>
         <div class="flex items-baseline justify-between mb-2">
-          <span id="budgetSpent" class="text-lg font-bold text-white">₹0</span>
-          <span id="budgetLimit" class="text-xs text-slate-400 font-medium">/ ₹25,000</span>
+          <span id="budgetSpent" class="text-base sm:text-lg font-bold text-white">₹0</span>
+          <span id="budgetLimit" class="text-[11px] sm:text-xs text-slate-400 font-medium">/ ₹25,000</span>
         </div>
         <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
           <div id="budgetProgressBar" class="bg-red-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
         </div>
-        <p id="budgetText" class="text-[11px] text-slate-400 mt-1.5 font-medium">0% used</p>
+        <p id="budgetText" class="text-[10px] sm:text-[11px] text-slate-400 mt-1.5 font-medium">0% used</p>
       </div>
     </div>
 
     <!-- Main Content Area -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
 
       <!-- CREATE Transaction Form Section -->
       <div class="lg:col-span-1 space-y-6">
-        <div class="spidey-card rounded-2xl p-6 shadow-2xl sticky top-6 border border-red-500/20">
-          <h2 class="text-xl font-bold mb-5 flex items-center gap-2.5 text-slate-100">
+        <div class="spidey-card rounded-2xl p-5 sm:p-6 shadow-2xl lg:sticky lg:top-6 border border-red-500/20">
+          <h2 class="text-lg sm:text-xl font-bold mb-4 sm:mb-5 flex items-center gap-2.5 text-slate-100">
             <span class="text-red-500"><i class="fa-solid fa-circle-plus"></i></span> Add New Record
           </h2>
 
           <form id="transactionForm" class="space-y-4">
             <div>
               <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Transaction Type</label>
-              <div class="grid grid-cols-2 gap-3">
-                <button type="button" id="typeExpenseBtn" class="type-btn active py-2.5 px-4 rounded-xl border border-red-500/50 bg-red-500/20 text-red-300 font-bold text-sm flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(239,68,68,0.2)]">
+              <div class="grid grid-cols-2 gap-2.5">
+                <button type="button" id="typeExpenseBtn" class="type-btn active py-3 px-3 rounded-xl border border-red-500/50 bg-red-500/20 text-red-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.2)] min-h-[44px]">
                   <i class="fa-solid fa-minus-circle"></i> Expense
                 </button>
-                <button type="button" id="typeIncomeBtn" class="type-btn py-2.5 px-4 rounded-xl border border-slate-800 bg-slate-900/50 text-slate-400 font-bold text-sm flex items-center justify-center gap-2">
+                <button type="button" id="typeIncomeBtn" class="type-btn py-3 px-3 rounded-xl border border-slate-800 bg-slate-900/50 text-slate-400 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 min-h-[44px]">
                   <i class="fa-solid fa-plus-circle"></i> Income
                 </button>
               </div>
@@ -447,28 +446,28 @@
 
             <div>
               <label for="description" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Title / Description</label>
-              <input type="text" id="description" placeholder="e.g. Groceries, Salary, Deposit" required class="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 text-sm focus:outline-none focus:border-red-500 transition-all">
+              <input type="text" id="description" placeholder="e.g. Groceries, Salary, Deposit" required class="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-red-500 transition-all">
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label for="amount" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Amount (₹)</label>
-                <input type="number" id="amount" placeholder="0.00" step="0.01" min="0.01" required class="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 text-sm focus:outline-none focus:border-red-500 transition-all">
+                <input type="number" id="amount" placeholder="0.00" step="0.01" min="0.01" required class="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-red-500 transition-all">
               </div>
               <div>
                 <label for="date" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Date</label>
-                <input type="date" id="date" required class="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-100 text-sm focus:outline-none focus:border-red-500 transition-all">
+                <input type="date" id="date" required class="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-3 text-slate-100 text-sm focus:outline-none focus:border-red-500 transition-all">
               </div>
             </div>
 
             <div>
               <label for="category" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Category</label>
-              <select id="category" required class="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 text-sm focus:outline-none focus:border-red-500 transition-all">
+              <select id="category" required class="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-red-500 transition-all">
                 <!-- Dynamically populated -->
               </select>
             </div>
 
-            <button type="submit" class="spidey-btn-glow w-full bg-gradient-to-r from-red-600 via-rose-600 to-blue-600 text-white font-bold py-3 px-4 rounded-xl shadow-[0_0_20px_rgba(225,29,72,0.4)] flex items-center justify-center gap-2 mt-2">
+            <button type="submit" class="spidey-btn-glow w-full bg-gradient-to-r from-red-600 via-rose-600 to-blue-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-[0_0_20px_rgba(225,29,72,0.4)] flex items-center justify-center gap-2 mt-2 min-h-[48px]">
               <i class="fa-solid fa-plus"></i> Create Entry
             </button>
           </form>
@@ -476,52 +475,52 @@
       </div>
 
       <!-- READ / UPDATE / DELETE Analytics & History Section -->
-      <div class="lg:col-span-2 space-y-8">
+      <div class="lg:col-span-2 space-y-6 sm:space-y-8">
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="spidey-card rounded-2xl p-5 shadow-xl">
+          <div class="spidey-card rounded-2xl p-4 sm:p-5 shadow-xl">
             <h3 class="text-sm font-bold text-slate-300 mb-4 flex items-center gap-2">
               <i class="fa-solid fa-chart-pie text-red-500"></i> Category Breakdown
             </h3>
-            <div class="relative h-56 flex items-center justify-center">
+            <div class="relative h-48 sm:h-56 flex items-center justify-center">
               <canvas id="categoryChart"></canvas>
             </div>
           </div>
 
-          <div class="spidey-card rounded-2xl p-5 shadow-xl">
+          <div class="spidey-card rounded-2xl p-4 sm:p-5 shadow-xl">
             <h3 class="text-sm font-bold text-slate-300 mb-4 flex items-center gap-2">
               <i class="fa-solid fa-chart-column text-blue-500"></i> Cash Flow Overview
             </h3>
-            <div class="relative h-56 flex items-center justify-center">
+            <div class="relative h-48 sm:h-56 flex items-center justify-center">
               <canvas id="trendChart"></canvas>
             </div>
           </div>
         </div>
 
-        <div class="spidey-card rounded-2xl p-5 shadow-xl">
-          <div class="flex flex-col sm:flex-row gap-4 justify-between items-center mb-6">
-            <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2 w-full sm:w-auto">
+        <div class="spidey-card rounded-2xl p-4 sm:p-5 shadow-xl">
+          <div class="flex flex-col gap-3 justify-between items-start sm:items-center mb-5">
+            <h3 class="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2 w-full sm:w-auto">
               <i class="fa-solid fa-list-check text-blue-400"></i> Transaction Records (R-U-D)
             </h3>
             
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full sm:w-auto">
-              <select id="filterType" class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full">
+              <select id="filterType" class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
                 <option value="all">All Types</option>
                 <option value="expense">Expenses Only</option>
                 <option value="income">Income Only</option>
               </select>
 
-              <select id="filterCategory" class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
+              <select id="filterCategory" class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500">
                 <option value="all">All Categories</option>
               </select>
 
-              <input type="month" id="filterMonth" class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 col-span-2 sm:col-span-1">
+              <input type="month" id="filterMonth" class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 col-span-2 sm:col-span-1">
             </div>
           </div>
 
           <div class="relative mb-4">
-            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-500 text-xs"></i>
-            <input type="text" id="searchInput" placeholder="Search web records..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-all">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-500 text-xs"></i>
+            <input type="text" id="searchInput" placeholder="Search web records..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-all">
           </div>
 
           <div class="overflow-x-auto">

@@ -8,8 +8,8 @@ let totalSavingsAllocated = 0;
 let currentType = 'expense';
 let authMode = 'login'; 
 
-let currentSavOp = 'add'; // 'add', 'sub', 'set'
-let currentBudOp = 'add'; // 'add', 'sub', 'set'
+let currentSavOp = 'add'; 
+let currentBudOp = 'add'; 
 
 const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
 
@@ -37,7 +37,7 @@ const categoryColors = {
   'Other Income': '#94a3b8'
 };
 
-// DOM Elements
+// DOM Elements Cache
 const authModal = document.getElementById('authModal');
 const authCloseBtn = document.getElementById('authCloseBtn');
 const authTitle = document.getElementById('authTitle');
@@ -270,8 +270,8 @@ function switchAuthTab(mode) {
     pinLabel.textContent = "4-Digit Security PIN";
     authSubmitBtn.textContent = "Access Vault";
     
-    document.getElementById('tabLoginBtn').className = "py-2 text-xs font-bold rounded-lg bg-red-600 text-white transition shadow";
-    document.getElementById('tabSignupBtn').className = "py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition";
+    document.getElementById('tabLoginBtn').className = "py-2.5 text-xs font-bold rounded-lg bg-red-600 text-white transition shadow";
+    document.getElementById('tabSignupBtn').className = "py-2.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition";
     populateQuickProfilesDropdown();
   } else if (mode === 'signup') {
     authTitle.textContent = "Create Spidey Profile";
@@ -287,8 +287,8 @@ function switchAuthTab(mode) {
     authSubmitBtn.textContent = "Create Profile & Start";
     authName.required = true;
 
-    document.getElementById('tabSignupBtn').className = "py-2 text-xs font-bold rounded-lg bg-blue-600 text-white transition shadow";
-    document.getElementById('tabLoginBtn').className = "py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition";
+    document.getElementById('tabSignupBtn').className = "py-2.5 text-xs font-bold rounded-lg bg-blue-600 text-white transition shadow";
+    document.getElementById('tabLoginBtn').className = "py-2.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition";
   } else if (mode === 'forgot') {
     authTitle.textContent = "Reset PIN Authentication";
     authSubtitle.textContent = "Verify security answer & set new PIN";
@@ -410,20 +410,20 @@ function setSavingsOp(op) {
   const btnSub = document.getElementById('savOpSub');
   const btnSet = document.getElementById('savOpSet');
 
-  btnAdd.className = "py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
-  btnSub.className = "py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
-  btnSet.className = "py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
+  btnAdd.className = "py-2.5 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
+  btnSub.className = "py-2.5 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
+  btnSet.className = "py-2.5 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
 
   if (op === 'add') {
-    btnAdd.className = "py-2 rounded-lg bg-indigo-600 text-white transition flex items-center justify-center gap-1";
+    btnAdd.className = "py-2.5 rounded-lg bg-indigo-600 text-white transition flex items-center justify-center gap-1";
     savAmountLabel.textContent = "Deposit Amount (+)";
     savRecordTransactionGroup.classList.remove('hidden');
   } else if (op === 'sub') {
-    btnSub.className = "py-2 rounded-lg bg-rose-600 text-white transition flex items-center justify-center gap-1";
+    btnSub.className = "py-2.5 rounded-lg bg-rose-600 text-white transition flex items-center justify-center gap-1";
     savAmountLabel.textContent = "Withdraw Amount (-)";
     savRecordTransactionGroup.classList.remove('hidden');
   } else {
-    btnSet.className = "py-2 rounded-lg bg-indigo-600 text-white transition flex items-center justify-center gap-1";
+    btnSet.className = "py-2.5 rounded-lg bg-indigo-600 text-white transition flex items-center justify-center gap-1";
     savAmountLabel.textContent = "New Total Savings Goal (=)";
     savRecordTransactionGroup.classList.add('hidden');
   }
@@ -485,18 +485,18 @@ function setBudgetOp(op) {
   const btnSub = document.getElementById('budOpSub');
   const btnSet = document.getElementById('budOpSet');
 
-  btnAdd.className = "py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
-  btnSub.className = "py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
-  btnSet.className = "py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
+  btnAdd.className = "py-2.5 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
+  btnSub.className = "py-2.5 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
+  btnSet.className = "py-2.5 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
 
   if (op === 'add') {
-    btnAdd.className = "py-2 rounded-lg bg-amber-600 text-white transition flex items-center justify-center gap-1";
+    btnAdd.className = "py-2.5 rounded-lg bg-amber-600 text-white transition flex items-center justify-center gap-1";
     budAmountLabel.textContent = "Increase Limit (+)";
   } else if (op === 'sub') {
-    btnSub.className = "py-2 rounded-lg bg-rose-600 text-white transition flex items-center justify-center gap-1";
+    btnSub.className = "py-2.5 rounded-lg bg-rose-600 text-white transition flex items-center justify-center gap-1";
     budAmountLabel.textContent = "Decrease Limit (-)";
   } else {
-    btnSet.className = "py-2 rounded-lg bg-amber-600 text-white transition flex items-center justify-center gap-1";
+    btnSet.className = "py-2.5 rounded-lg bg-amber-600 text-white transition flex items-center justify-center gap-1";
     budAmountLabel.textContent = "Set New Monthly Budget (=)";
   }
 }
@@ -649,11 +649,11 @@ function saveProfilesToStorage() {
 function setType(type) {
   currentType = type;
   if (type === 'expense') {
-    typeExpenseBtn.className = 'type-btn active py-2.5 px-4 rounded-xl border border-red-500/50 bg-red-500/20 text-red-300 font-bold text-sm flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(239,68,68,0.2)]';
-    typeIncomeBtn.className = 'type-btn py-2.5 px-4 rounded-xl border border-slate-800 bg-slate-900/50 text-slate-400 font-bold text-sm flex items-center justify-center gap-2';
+    typeExpenseBtn.className = 'type-btn active py-3 px-3 rounded-xl border border-red-500/50 bg-red-500/20 text-red-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.2)] min-h-[44px]';
+    typeIncomeBtn.className = 'type-btn py-3 px-3 rounded-xl border border-slate-800 bg-slate-900/50 text-slate-400 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 min-h-[44px]';
   } else {
-    typeIncomeBtn.className = 'type-btn active py-2.5 px-4 rounded-xl border border-emerald-500/50 bg-emerald-500/20 text-emerald-300 font-bold text-sm flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.2)]';
-    typeExpenseBtn.className = 'type-btn py-2.5 px-4 rounded-xl border border-slate-800 bg-slate-900/50 text-slate-400 font-bold text-sm flex items-center justify-center gap-2';
+    typeIncomeBtn.className = 'type-btn active py-3 px-3 rounded-xl border border-emerald-500/50 bg-emerald-500/20 text-emerald-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.2)] min-h-[44px]';
+    typeExpenseBtn.className = 'type-btn py-3 px-3 rounded-xl border border-slate-800 bg-slate-900/50 text-slate-400 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 min-h-[44px]';
   }
   populateCategoryOptions();
 }
@@ -761,7 +761,7 @@ function updateUI() {
   renderCharts(filtered);
 }
 
-// READ Transaction List with Full Action Controls
+// READ Transaction List with Responsive Action Controls
 function renderTransactionList(items) {
   transactionList.innerHTML = '';
   if (items.length === 0) {
@@ -778,16 +778,16 @@ function renderTransactionList(items) {
     const color = categoryColors[t.category] || '#64748b';
 
     const li = document.createElement('li');
-    li.className = 'bg-slate-900/60 hover:bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between transition-all duration-300 group animate-slide-in';
+    li.className = 'bg-slate-900/60 hover:bg-slate-900 border border-slate-800 rounded-xl p-3 sm:p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all duration-300 group animate-slide-in';
 
     li.innerHTML = `
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs" style="background-color: ${color}20; color: ${color};">
+      <div class="flex items-center gap-3 w-full sm:w-auto">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs shrink-0" style="background-color: ${color}20; color: ${color};">
           <i class="fa-solid ${isExpense ? 'fa-arrow-down-long' : 'fa-arrow-up-long'}"></i>
         </div>
-        <div>
-          <h4 class="font-semibold text-sm text-slate-100">${escapeHtml(t.description)}</h4>
-          <div class="flex items-center gap-2 mt-0.5">
+        <div class="min-w-0 flex-1">
+          <h4 class="font-semibold text-sm text-slate-100 truncate">${escapeHtml(t.description)}</h4>
+          <div class="flex flex-wrap items-center gap-2 mt-0.5">
             <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full" style="background-color: ${color}15; color: ${color}">
               ${t.category}
             </span>
@@ -795,18 +795,18 @@ function renderTransactionList(items) {
           </div>
         </div>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/80">
         <span class="font-extrabold text-sm ${isExpense ? 'text-red-400' : 'text-emerald-400'}">
           ${isExpense ? '-' : '+'}${formatCurrency(t.amount)}
         </span>
-        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
-          <button onclick="duplicateTransaction(${t.id})" class="text-slate-500 hover:text-indigo-400 p-1" title="Duplicate (Create)">
+        <div class="flex items-center gap-1.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition">
+          <button onclick="duplicateTransaction(${t.id})" class="text-slate-400 hover:text-indigo-400 p-2 min-w-[36px] min-h-[36px] flex items-center justify-center bg-slate-800/50 sm:bg-transparent rounded-lg" title="Duplicate">
             <i class="fa-solid fa-clone text-xs"></i>
           </button>
-          <button onclick="openEditTxModal(${t.id})" class="text-slate-500 hover:text-blue-400 p-1" title="Edit (Update)">
+          <button onclick="openEditTxModal(${t.id})" class="text-slate-400 hover:text-blue-400 p-2 min-w-[36px] min-h-[36px] flex items-center justify-center bg-slate-800/50 sm:bg-transparent rounded-lg" title="Edit">
             <i class="fa-solid fa-pen text-xs"></i>
           </button>
-          <button onclick="deleteTransaction(${t.id})" class="text-slate-500 hover:text-red-400 p-1" title="Delete">
+          <button onclick="deleteTransaction(${t.id})" class="text-slate-400 hover:text-red-400 p-2 min-w-[36px] min-h-[36px] flex items-center justify-center bg-slate-800/50 sm:bg-transparent rounded-lg" title="Delete">
             <i class="fa-solid fa-trash-can text-xs"></i>
           </button>
         </div>
@@ -842,8 +842,8 @@ function renderCharts(items) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 } } } },
-      cutout: '70%'
+      plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 }, boxWidth: 12 } } },
+      cutout: '65%'
     }
   });
 
@@ -869,7 +869,7 @@ function renderCharts(items) {
         x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
         y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
       },
-      plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 } } } }
+      plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 }, boxWidth: 12 } } }
     }
   });
 }
