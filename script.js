@@ -1,4 +1,4 @@
-// Multi-Profile & State Management
+// Global State
 let currentMobile = localStorage.getItem('currentActiveMobile') || null;
 let userProfiles = JSON.parse(localStorage.getItem('spideyUserProfiles')) || {};
 
@@ -27,17 +27,17 @@ const categoryColors = {
   'Shopping': '#ec4899',
   'Health': '#06b6d4',
   'Education': '#6366f1',
-  'Savings Allocation': '#6366f1',
+  'Savings Allocation': '#818cf8',
   'Other Expense': '#64748b',
   'Salary': '#10b981',
   'Freelance': '#14b8a6',
   'Investments': '#3b82f6',
   'Business': '#8b5cf6',
   'Gifts': '#f43f5e',
-  'Other Income': '#94a3b8'
+  'Other Income': '#38bdf8'
 };
 
-// DOM Elements Cache
+// DOM Cache
 const authModal = document.getElementById('authModal');
 const authCloseBtn = document.getElementById('authCloseBtn');
 const authTitle = document.getElementById('authTitle');
@@ -123,14 +123,35 @@ const transactionList = document.getElementById('transactionList');
 const exportBtn = document.getElementById('exportBtn');
 const resetBtn = document.getElementById('resetBtn');
 
-let categoryChartInstance = null;
+let expenseCategoryChartInstance = null;
+let incomeCategoryChartInstance = null;
 let trendChartInstance = null;
 
-// Initialization
+// Helper: Standardize Date Formats (handles YYYY-MM-DD and DD-MM-YYYY)
+function getYearMonth(dateStr) {
+  if (!dateStr) return '';
+  if (dateStr.includes('-')) {
+    const parts = dateStr.split('-');
+    if (parts[0].length === 4) {
+      // YYYY-MM-DD
+      return `${parts[0]}-${parts[1]}`;
+    } else if (parts[2] && parts[2].length === 4) {
+      // DD-MM-YYYY
+      return `${parts[2]}-${parts[1]}`;
+    }
+  }
+  return dateStr.slice(0, 7);
+}
+
+// App Init
 document.addEventListener('DOMContentLoaded', () => {
-  dateInput.value = new Date().toISOString().split('T')[0];
   const today = new Date();
-  filterMonth.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+
+  dateInput.value = `${yyyy}-${mm}-${dd}`;
+  filterMonth.value = `${yyyy}-${mm}`;
 
   checkAuthStatus();
 
@@ -147,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
   resetBtn.addEventListener('click', resetAllData);
 });
 
-// --- PROFILE CRUD & AUTHENTICATION ---
+// Profile & Auth
 function refreshProfilesFromStorage() {
   userProfiles = JSON.parse(localStorage.getItem('spideyUserProfiles')) || {};
 }
@@ -392,7 +413,7 @@ function logoutProfile() {
   checkAuthStatus();
 }
 
-// --- SAVINGS CRUD OPERATIONS ---
+// Savings CRUD
 function openSavingsModal() {
   currentSavingsDisplay.textContent = formatCurrency(totalSavingsAllocated);
   savAmountInput.value = '';
@@ -434,6 +455,8 @@ function executeSavingsMath(e) {
   const val = parseFloat(savAmountInput.value);
   if (isNaN(val) || val < 0) return;
 
+  const today = new Date().toISOString().split('T')[0];
+
   if (currentSavOp === 'add') {
     totalSavingsAllocated += val;
     if (savRecordTransaction.checked) {
@@ -443,7 +466,7 @@ function executeSavingsMath(e) {
         description: 'Savings Transfer Deposit',
         amount: val,
         category: 'Savings Allocation',
-        date: new Date().toISOString().split('T')[0]
+        date: today
       });
     }
   } else if (currentSavOp === 'sub') {
@@ -455,7 +478,7 @@ function executeSavingsMath(e) {
         description: 'Savings Withdrawal Transfer',
         amount: val,
         category: 'Other Income',
-        date: new Date().toISOString().split('T')[0]
+        date: today
       });
     }
   } else if (currentSavOp === 'set') {
@@ -467,7 +490,7 @@ function executeSavingsMath(e) {
   closeSavingsModal();
 }
 
-// --- MONTHLY BUDGET CRUD OPERATIONS ---
+// Monthly Budget CRUD
 function openBudgetModal() {
   currentBudgetDisplay.textContent = formatCurrency(monthlyBudget);
   budAmountInput.value = '';
@@ -519,7 +542,7 @@ function executeBudgetMath(e) {
   closeBudgetModal();
 }
 
-// --- TRANSACTION UPDATE (EDIT) OPERATIONS ---
+// Transaction Update (Edit) Operations
 function openEditTxModal(id) {
   const tx = transactions.find(t => t.id === id);
   if (!tx) return;
@@ -570,7 +593,7 @@ function saveEditedTransaction(e) {
   closeEditTxModal();
 }
 
-// --- TRANSACTION CREATE & DUPLICATE OPERATIONS ---
+// Transaction Create & Duplicate
 function duplicateTransaction(id) {
   const tx = transactions.find(t => t.id === id);
   if (!tx) return;
@@ -605,7 +628,7 @@ function handleFormSubmit(e) {
   descriptionInput.focus();
 }
 
-// --- TRANSACTION DELETE OPERATION ---
+// Transaction Delete
 function deleteTransaction(id) {
   if (confirm("Are you sure you want to delete this transaction record?")) {
     transactions = transactions.filter(t => t.id !== id);
@@ -614,7 +637,7 @@ function deleteTransaction(id) {
   }
 }
 
-// --- USER DATA & LOCAL STORAGE ---
+// Persistence
 function loadUserData() {
   refreshProfilesFromStorage();
   const user = userProfiles[currentMobile];
@@ -645,7 +668,7 @@ function saveProfilesToStorage() {
   localStorage.setItem('spideyUserProfiles', JSON.stringify(userProfiles));
 }
 
-// --- APP LOGIC & UI UPDATES ---
+// Form Helpers
 function setType(type) {
   currentType = type;
   if (type === 'expense') {
@@ -682,54 +705,55 @@ function populateFilterCategories() {
 function getFilteredTransactions() {
   const selectedType = filterType.value;
   const selectedCategory = filterCategory.value;
-  const selectedMonth = filterMonth.value;
+  const selectedMonth = filterMonth.value; // e.g. "2026-10"
   const searchTerm = searchInput.value.toLowerCase().trim();
 
   return transactions.filter(t => {
     const matchesType = selectedType === 'all' || t.type === selectedType;
     const matchesCategory = selectedCategory === 'all' || t.category === selectedCategory;
-    const matchesMonth = !selectedMonth || t.date.startsWith(selectedMonth);
+    const matchesMonth = !selectedMonth || (getYearMonth(t.date) === selectedMonth);
     const matchesSearch = t.description.toLowerCase().includes(searchTerm) || t.category.toLowerCase().includes(searchTerm);
     return matchesType && matchesCategory && matchesMonth && matchesSearch;
   });
 }
 
-// Main Real-Time Dashboard Calculations
+// Master UI Synchronization Function
 function updateUI() {
   const filtered = getFilteredTransactions();
 
+  // 1. All-Time Totals
   const allIncome = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + Number(t.amount || 0), 0);
   const allExpense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + Number(t.amount || 0), 0);
   const netBalance = allIncome - allExpense - Number(totalSavingsAllocated);
 
-  const filteredIncome = filtered.filter(t => t.type === 'income').reduce((acc, t) => acc + Number(t.amount || 0), 0);
-  const filteredExpense = filtered.filter(t => t.type === 'expense').reduce((acc, t) => acc + Number(t.amount || 0), 0);
-
   totalBalanceEl.textContent = formatCurrency(netBalance);
   totalSavingsEl.textContent = formatCurrency(totalSavingsAllocated);
-  totalIncomeEl.textContent = formatCurrency(filteredIncome);
-  totalExpenseEl.textContent = formatCurrency(filteredExpense);
+  totalIncomeEl.textContent = formatCurrency(allIncome);
+  totalExpenseEl.textContent = formatCurrency(allExpense);
 
-  const currentMonthStr = new Date().toISOString().slice(0, 7);
-  const currentMonthExpenses = transactions
-    .filter(t => t.type === 'expense' && t.date.startsWith(currentMonthStr))
+  // 2. Active Selected Month Calculations (matches format via getYearMonth)
+  const activeMonthStr = filterMonth.value || getYearMonth(new Date().toISOString().slice(0, 10));
+  const selectedMonthExpenses = transactions
+    .filter(t => t.type === 'expense' && getYearMonth(t.date) === activeMonthStr)
     .reduce((acc, t) => acc + Number(t.amount || 0), 0);
 
-  budgetSpentEl.textContent = formatCurrency(currentMonthExpenses);
+  budgetSpentEl.textContent = formatCurrency(selectedMonthExpenses);
   budgetLimitEl.textContent = `/ ${formatCurrency(monthlyBudget)}`;
 
-  const percentage = monthlyBudget > 0 ? Math.min(Math.round((currentMonthExpenses / monthlyBudget) * 100), 100) : 0;
+  const percentage = monthlyBudget > 0 ? Math.min(Math.round((selectedMonthExpenses / monthlyBudget) * 100), 100) : 0;
   budgetProgressBar.style.width = `${percentage}%`;
   budgetText.textContent = `${percentage}% used`;
 
-  // Key Performance Indicators (KPIs)
+  // 3. KPIs
   const savingsRate = allIncome > 0 ? Math.round(((allIncome - allExpense) / allIncome) * 100) : 0;
   kpiSavingsRate.textContent = `${Math.max(0, savingsRate)}%`;
 
-  const daysInMonth = new Date().getDate();
-  const dailyAvg = daysInMonth > 0 ? currentMonthExpenses / daysInMonth : 0;
+  const now = new Date();
+  const currentDays = now.getDate() || 1;
+  const dailyAvg = selectedMonthExpenses / currentDays;
+
   kpiDailyAvg.textContent = formatCurrency(dailyAvg);
-  kpiMonthSpend.textContent = formatCurrency(currentMonthExpenses);
+  kpiMonthSpend.textContent = formatCurrency(selectedMonthExpenses);
 
   let score = 100;
   if (percentage > 80) score -= 20;
@@ -737,15 +761,15 @@ function updateUI() {
   if (savingsRate < 20) score -= 20;
   kpiHealthScore.textContent = `${Math.max(0, score)} / 100`;
 
-  // Dynamic Alert Banners
-  if (currentMonthExpenses >= monthlyBudget && monthlyBudget > 0) {
+  // 4. Budget Alert Banner
+  if (selectedMonthExpenses >= monthlyBudget && monthlyBudget > 0) {
     budgetProgressBar.className = 'bg-red-500 h-2 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]';
     budgetAlert.className = 'mb-6 p-4 rounded-xl border flex items-center justify-between transition-all duration-500 bg-red-500/10 border-red-500/40 text-red-300';
     alertIcon.className = 'fa-solid fa-triangle-exclamation text-red-400 text-xl';
     alertTitle.textContent = 'Budget Limit Exceeded!';
-    alertDesc.textContent = `Spent ${formatCurrency(currentMonthExpenses)} which exceeds your limit of ${formatCurrency(monthlyBudget)}.`;
+    alertDesc.textContent = `Spent ${formatCurrency(selectedMonthExpenses)} exceeding your limit of ${formatCurrency(monthlyBudget)}.`;
     budgetAlert.classList.remove('hidden');
-  } else if (currentMonthExpenses >= monthlyBudget * 0.8 && monthlyBudget > 0) {
+  } else if (selectedMonthExpenses >= monthlyBudget * 0.8 && monthlyBudget > 0) {
     budgetProgressBar.className = 'bg-amber-500 h-2 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]';
     budgetAlert.className = 'mb-6 p-4 rounded-xl border flex items-center justify-between transition-all duration-500 bg-amber-500/10 border-amber-500/40 text-amber-300';
     alertIcon.className = 'fa-solid fa-circle-exclamation text-amber-400 text-xl';
@@ -757,25 +781,26 @@ function updateUI() {
     budgetAlert.classList.add('hidden');
   }
 
+  // 5. Render History & Analytics Charts
   renderTransactionList(filtered);
   renderCharts(filtered);
 }
 
-// READ Transaction List with Responsive Action Controls
+// Render Transaction Records Table
 function renderTransactionList(items) {
   transactionList.innerHTML = '';
   if (items.length === 0) {
     transactionList.innerHTML = `
       <div class="text-center py-8 text-slate-500">
         <i class="fa-solid fa-folder-open text-3xl mb-2 block"></i>
-        <p class="text-xs">No records found for this profile.</p>
+        <p class="text-xs">No records found for this view.</p>
       </div>`;
     return;
   }
 
   items.forEach(t => {
     const isExpense = t.type === 'expense';
-    const color = categoryColors[t.category] || '#64748b';
+    const color = categoryColors[t.category] || (isExpense ? '#ef4444' : '#10b981');
 
     const li = document.createElement('li');
     li.className = 'bg-slate-900/60 hover:bg-slate-900 border border-slate-800 rounded-xl p-3 sm:p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all duration-300 group animate-slide-in';
@@ -788,7 +813,7 @@ function renderTransactionList(items) {
         <div class="min-w-0 flex-1">
           <h4 class="font-semibold text-sm text-slate-100 truncate">${escapeHtml(t.description)}</h4>
           <div class="flex flex-wrap items-center gap-2 mt-0.5">
-            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full" style="background-color: ${color}15; color: ${color}">
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full" style="background-color: ${color}20; color: ${color}">
               ${t.category}
             </span>
             <span class="text-[11px] text-slate-500">${t.date}</span>
@@ -816,25 +841,26 @@ function renderTransactionList(items) {
   });
 }
 
+// Render Doughnut & Bar Charts
 function renderCharts(items) {
+  // 1. Expense Doughnut Chart
   const expenseItems = items.filter(t => t.type === 'expense');
-  const catTotals = {};
-  expenseItems.forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + Number(t.amount); });
+  const expCatTotals = {};
+  expenseItems.forEach(t => { expCatTotals[t.category] = (expCatTotals[t.category] || 0) + Number(t.amount); });
+  const expLabels = Object.keys(expCatTotals);
+  const expData = Object.values(expCatTotals);
+  const expColors = expLabels.map(cat => categoryColors[cat] || '#ef4444');
 
-  const catLabels = Object.keys(catTotals);
-  const catData = Object.values(catTotals);
-  const catBgColors = catLabels.map(cat => categoryColors[cat] || '#64748b');
+  const ctxExpCat = document.getElementById('expenseCategoryChart').getContext('2d');
+  if (expenseCategoryChartInstance) expenseCategoryChartInstance.destroy();
 
-  const ctxCategory = document.getElementById('categoryChart').getContext('2d');
-  if (categoryChartInstance) categoryChartInstance.destroy();
-
-  categoryChartInstance = new Chart(ctxCategory, {
+  expenseCategoryChartInstance = new Chart(ctxExpCat, {
     type: 'doughnut',
     data: {
-      labels: catLabels.length ? catLabels : ['No Expenses'],
+      labels: expLabels.length ? expLabels : ['No Expenses'],
       datasets: [{
-        data: catData.length ? catData : [1],
-        backgroundColor: catBgColors.length ? catBgColors : ['#334155'],
+        data: expData.length ? expData : [1],
+        backgroundColor: expColors.length ? expColors : ['#334155'],
         borderWidth: 2,
         borderColor: '#1e293b'
       }]
@@ -842,11 +868,42 @@ function renderCharts(items) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 }, boxWidth: 12 } } },
+      plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 9 }, boxWidth: 8 } } },
       cutout: '65%'
     }
   });
 
+  // 2. Income Doughnut Chart
+  const incomeItems = items.filter(t => t.type === 'income');
+  const incCatTotals = {};
+  incomeItems.forEach(t => { incCatTotals[t.category] = (incCatTotals[t.category] || 0) + Number(t.amount); });
+  const incLabels = Object.keys(incCatTotals);
+  const incData = Object.values(incCatTotals);
+  const incColors = incLabels.map(cat => categoryColors[cat] || '#10b981');
+
+  const ctxIncCat = document.getElementById('incomeCategoryChart').getContext('2d');
+  if (incomeCategoryChartInstance) incomeCategoryChartInstance.destroy();
+
+  incomeCategoryChartInstance = new Chart(ctxIncCat, {
+    type: 'doughnut',
+    data: {
+      labels: incLabels.length ? incLabels : ['No Income'],
+      datasets: [{
+        data: incData.length ? incData : [1],
+        backgroundColor: incColors.length ? incColors : ['#334155'],
+        borderWidth: 2,
+        borderColor: '#1e293b'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 9 }, boxWidth: 8 } } },
+      cutout: '65%'
+    }
+  });
+
+  // 3. Trend Cash Flow Bar Chart
   const ctxTrend = document.getElementById('trendChart').getContext('2d');
   if (trendChartInstance) trendChartInstance.destroy();
 
@@ -856,7 +913,7 @@ function renderCharts(items) {
   trendChartInstance = new Chart(ctxTrend, {
     type: 'bar',
     data: {
-      labels: ['Income vs Expenses'],
+      labels: ['Cash Flow'],
       datasets: [
         { label: 'Income', data: [totalInc], backgroundColor: '#10b981', borderRadius: 6 },
         { label: 'Expense', data: [totalExp], backgroundColor: '#f43f5e', borderRadius: 6 }
@@ -866,10 +923,10 @@ function renderCharts(items) {
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
-        y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+        x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+        y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8', font: { size: 10 } } }
       },
-      plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 }, boxWidth: 12 } } }
+      plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 9 }, boxWidth: 8 } } }
     }
   });
 }
