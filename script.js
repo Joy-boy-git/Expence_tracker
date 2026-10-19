@@ -6,11 +6,13 @@ let transactions = [];
 let monthlyBudget = 25000;
 let totalSavingsAllocated = 0;
 let currentType = 'expense';
-let authMode = 'login'; // 'login', 'signup', 'forgot'
+let authMode = 'login'; 
+
+let currentSavOp = 'add'; // 'add', 'sub', 'set'
+let currentBudOp = 'add'; // 'add', 'sub', 'set'
 
 const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
 
-// Categories Configuration
 const categories = {
   expense: ['Food & Dining', 'Housing', 'Transport', 'Utilities', 'Entertainment', 'Shopping', 'Health', 'Education', 'Savings Allocation', 'Other Expense'],
   income: ['Salary', 'Freelance', 'Investments', 'Business', 'Gifts', 'Other Income']
@@ -56,6 +58,26 @@ const authSubmitBtn = document.getElementById('authSubmitBtn');
 const forgotPinBtn = document.getElementById('forgotPinBtn');
 const backToLoginBtn = document.getElementById('backToLoginBtn');
 
+const savingsModal = document.getElementById('savingsModal');
+const currentSavingsDisplay = document.getElementById('currentSavingsDisplay');
+const savAmountInput = document.getElementById('savAmountInput');
+const savAmountLabel = document.getElementById('savAmountLabel');
+const savRecordTransactionGroup = document.getElementById('savRecordTransactionGroup');
+const savRecordTransaction = document.getElementById('savRecordTransaction');
+
+const budgetModal = document.getElementById('budgetModal');
+const currentBudgetDisplay = document.getElementById('currentBudgetDisplay');
+const budAmountInput = document.getElementById('budAmountInput');
+const budAmountLabel = document.getElementById('budAmountLabel');
+
+const editTxModal = document.getElementById('editTxModal');
+const editTxId = document.getElementById('editTxId');
+const editTxType = document.getElementById('editTxType');
+const editTxDesc = document.getElementById('editTxDesc');
+const editTxAmount = document.getElementById('editTxAmount');
+const editTxDate = document.getElementById('editTxDate');
+const editTxCategory = document.getElementById('editTxCategory');
+
 const profileModal = document.getElementById('profileModal');
 const profileAvatarInitial = document.getElementById('profileAvatarInitial');
 const modalProfileName = document.getElementById('modalProfileName');
@@ -82,7 +104,11 @@ const budgetSpentEl = document.getElementById('budgetSpent');
 const budgetLimitEl = document.getElementById('budgetLimit');
 const budgetProgressBar = document.getElementById('budgetProgressBar');
 const budgetText = document.getElementById('budgetText');
-const editBudgetBtn = document.getElementById('editBudgetBtn');
+
+const kpiSavingsRate = document.getElementById('kpiSavingsRate');
+const kpiDailyAvg = document.getElementById('kpiDailyAvg');
+const kpiMonthSpend = document.getElementById('kpiMonthSpend');
+const kpiHealthScore = document.getElementById('kpiHealthScore');
 
 const budgetAlert = document.getElementById('budgetAlert');
 const alertIcon = document.getElementById('alertIcon');
@@ -117,12 +143,11 @@ document.addEventListener('DOMContentLoaded', () => {
   filterMonth.addEventListener('change', updateUI);
   searchInput.addEventListener('input', updateUI);
   
-  editBudgetBtn.addEventListener('click', handleEditBudget);
   exportBtn.addEventListener('click', exportToCSV);
   resetBtn.addEventListener('click', resetAllData);
 });
 
-// --- AUTHENTICATION & SESSION TIMEOUT (15 DAYS) ---
+// --- PROFILE CRUD & AUTHENTICATION ---
 function refreshProfilesFromStorage() {
   userProfiles = JSON.parse(localStorage.getItem('spideyUserProfiles')) || {};
 }
@@ -136,10 +161,9 @@ function checkAuthStatus() {
   }
 
   const user = userProfiles[currentMobile];
-  const lastActive = user.lastLoginTimestamp || 0;
+  const lastActive = Number(user.lastLoginTimestamp) || 0;
   const now = Date.now();
 
-  // 15-Day Inactivity Check
   if (now - lastActive > FIFTEEN_DAYS_MS) {
     alert("Session expired due to 15 days of inactivity. Please enter your PIN to login.");
     promptLogin(true);
@@ -368,7 +392,229 @@ function logoutProfile() {
   checkAuthStatus();
 }
 
-// --- USER DATA & STORAGE ---
+// --- SAVINGS CRUD OPERATIONS ---
+function openSavingsModal() {
+  currentSavingsDisplay.textContent = formatCurrency(totalSavingsAllocated);
+  savAmountInput.value = '';
+  setSavingsOp('add');
+  savingsModal.classList.remove('hidden');
+}
+
+function closeSavingsModal() {
+  savingsModal.classList.add('hidden');
+}
+
+function setSavingsOp(op) {
+  currentSavOp = op;
+  const btnAdd = document.getElementById('savOpAdd');
+  const btnSub = document.getElementById('savOpSub');
+  const btnSet = document.getElementById('savOpSet');
+
+  btnAdd.className = "py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
+  btnSub.className = "py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
+  btnSet.className = "py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
+
+  if (op === 'add') {
+    btnAdd.className = "py-2 rounded-lg bg-indigo-600 text-white transition flex items-center justify-center gap-1";
+    savAmountLabel.textContent = "Deposit Amount (+)";
+    savRecordTransactionGroup.classList.remove('hidden');
+  } else if (op === 'sub') {
+    btnSub.className = "py-2 rounded-lg bg-rose-600 text-white transition flex items-center justify-center gap-1";
+    savAmountLabel.textContent = "Withdraw Amount (-)";
+    savRecordTransactionGroup.classList.remove('hidden');
+  } else {
+    btnSet.className = "py-2 rounded-lg bg-indigo-600 text-white transition flex items-center justify-center gap-1";
+    savAmountLabel.textContent = "New Total Savings Goal (=)";
+    savRecordTransactionGroup.classList.add('hidden');
+  }
+}
+
+function executeSavingsMath(e) {
+  e.preventDefault();
+  const val = parseFloat(savAmountInput.value);
+  if (isNaN(val) || val < 0) return;
+
+  if (currentSavOp === 'add') {
+    totalSavingsAllocated += val;
+    if (savRecordTransaction.checked) {
+      transactions.unshift({
+        id: Date.now(),
+        type: 'expense',
+        description: 'Savings Transfer Deposit',
+        amount: val,
+        category: 'Savings Allocation',
+        date: new Date().toISOString().split('T')[0]
+      });
+    }
+  } else if (currentSavOp === 'sub') {
+    totalSavingsAllocated = Math.max(0, totalSavingsAllocated - val);
+    if (savRecordTransaction.checked) {
+      transactions.unshift({
+        id: Date.now(),
+        type: 'income',
+        description: 'Savings Withdrawal Transfer',
+        amount: val,
+        category: 'Other Income',
+        date: new Date().toISOString().split('T')[0]
+      });
+    }
+  } else if (currentSavOp === 'set') {
+    totalSavingsAllocated = val;
+  }
+
+  saveToLocalStorage();
+  updateUI();
+  closeSavingsModal();
+}
+
+// --- MONTHLY BUDGET CRUD OPERATIONS ---
+function openBudgetModal() {
+  currentBudgetDisplay.textContent = formatCurrency(monthlyBudget);
+  budAmountInput.value = '';
+  setBudgetOp('add');
+  budgetModal.classList.remove('hidden');
+}
+
+function closeBudgetModal() {
+  budgetModal.classList.add('hidden');
+}
+
+function setBudgetOp(op) {
+  currentBudOp = op;
+  const btnAdd = document.getElementById('budOpAdd');
+  const btnSub = document.getElementById('budOpSub');
+  const btnSet = document.getElementById('budOpSet');
+
+  btnAdd.className = "py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
+  btnSub.className = "py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
+  btnSet.className = "py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
+
+  if (op === 'add') {
+    btnAdd.className = "py-2 rounded-lg bg-amber-600 text-white transition flex items-center justify-center gap-1";
+    budAmountLabel.textContent = "Increase Limit (+)";
+  } else if (op === 'sub') {
+    btnSub.className = "py-2 rounded-lg bg-rose-600 text-white transition flex items-center justify-center gap-1";
+    budAmountLabel.textContent = "Decrease Limit (-)";
+  } else {
+    btnSet.className = "py-2 rounded-lg bg-amber-600 text-white transition flex items-center justify-center gap-1";
+    budAmountLabel.textContent = "Set New Monthly Budget (=)";
+  }
+}
+
+function executeBudgetMath(e) {
+  e.preventDefault();
+  const val = parseFloat(budAmountInput.value);
+  if (isNaN(val) || val < 0) return;
+
+  if (currentBudOp === 'add') {
+    monthlyBudget += val;
+  } else if (currentBudOp === 'sub') {
+    monthlyBudget = Math.max(0, monthlyBudget - val);
+  } else if (currentBudOp === 'set') {
+    monthlyBudget = val;
+  }
+
+  saveToLocalStorage();
+  updateUI();
+  closeBudgetModal();
+}
+
+// --- TRANSACTION UPDATE (EDIT) OPERATIONS ---
+function openEditTxModal(id) {
+  const tx = transactions.find(t => t.id === id);
+  if (!tx) return;
+
+  editTxId.value = tx.id;
+  editTxType.value = tx.type;
+  editTxDesc.value = tx.description;
+  editTxAmount.value = tx.amount;
+  editTxDate.value = tx.date;
+
+  populateEditCategoryOptions();
+  editTxCategory.value = tx.category;
+
+  editTxModal.classList.remove('hidden');
+}
+
+function populateEditCategoryOptions() {
+  const type = editTxType.value;
+  editTxCategory.innerHTML = '';
+  const catList = categories[type] || categories.expense;
+  catList.forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat;
+    opt.textContent = cat;
+    editTxCategory.appendChild(opt);
+  });
+}
+
+function closeEditTxModal() {
+  editTxModal.classList.add('hidden');
+}
+
+function saveEditedTransaction(e) {
+  e.preventDefault();
+  const id = Number(editTxId.value);
+  const txIndex = transactions.findIndex(t => t.id === id);
+
+  if (txIndex !== -1) {
+    transactions[txIndex].type = editTxType.value;
+    transactions[txIndex].description = editTxDesc.value.trim();
+    transactions[txIndex].amount = parseFloat(editTxAmount.value);
+    transactions[txIndex].date = editTxDate.value;
+    transactions[txIndex].category = editTxCategory.value;
+
+    saveToLocalStorage();
+    updateUI();
+  }
+  closeEditTxModal();
+}
+
+// --- TRANSACTION CREATE & DUPLICATE OPERATIONS ---
+function duplicateTransaction(id) {
+  const tx = transactions.find(t => t.id === id);
+  if (!tx) return;
+
+  const dup = { ...tx, id: Date.now(), description: `${tx.description} (Copy)` };
+  transactions.unshift(dup);
+  saveToLocalStorage();
+  updateUI();
+}
+
+function handleFormSubmit(e) {
+  e.preventDefault();
+
+  const newAmount = parseFloat(amountInput.value);
+  if (isNaN(newAmount) || newAmount <= 0) return;
+
+  const newTransaction = {
+    id: Date.now(),
+    type: currentType,
+    description: descriptionInput.value.trim(),
+    amount: newAmount,
+    category: categorySelect.value,
+    date: dateInput.value
+  };
+
+  transactions.unshift(newTransaction);
+  saveToLocalStorage();
+  updateUI();
+
+  descriptionInput.value = '';
+  amountInput.value = '';
+  descriptionInput.focus();
+}
+
+// --- TRANSACTION DELETE OPERATION ---
+function deleteTransaction(id) {
+  if (confirm("Are you sure you want to delete this transaction record?")) {
+    transactions = transactions.filter(t => t.id !== id);
+    saveToLocalStorage();
+    updateUI();
+  }
+}
+
+// --- USER DATA & LOCAL STORAGE ---
 function loadUserData() {
   refreshProfilesFromStorage();
   const user = userProfiles[currentMobile];
@@ -377,9 +623,9 @@ function loadUserData() {
     return;
   }
   profileDisplayName.textContent = user.name;
-  monthlyBudget = user.monthlyBudget || 25000;
-  totalSavingsAllocated = user.totalSavingsAllocated || 0;
-  transactions = user.transactions || [];
+  monthlyBudget = Number(user.monthlyBudget) || 25000;
+  totalSavingsAllocated = Number(user.totalSavingsAllocated) || 0;
+  transactions = Array.isArray(user.transactions) ? user.transactions : [];
 }
 
 function saveToLocalStorage() {
@@ -387,9 +633,9 @@ function saveToLocalStorage() {
   refreshProfilesFromStorage();
   userProfiles[currentMobile] = {
     ...userProfiles[currentMobile],
-    monthlyBudget,
-    totalSavingsAllocated,
-    transactions,
+    monthlyBudget: Number(monthlyBudget),
+    totalSavingsAllocated: Number(totalSavingsAllocated),
+    transactions: transactions,
     lastLoginTimestamp: Date.now()
   };
   saveProfilesToStorage();
@@ -433,50 +679,6 @@ function populateFilterCategories() {
   });
 }
 
-function handleFormSubmit(e) {
-  e.preventDefault();
-  const newTransaction = {
-    id: Date.now(),
-    type: currentType,
-    description: descriptionInput.value.trim(),
-    amount: parseFloat(amountInput.value),
-    category: categorySelect.value,
-    date: dateInput.value
-  };
-
-  transactions.unshift(newTransaction);
-  saveToLocalStorage();
-  updateUI();
-
-  descriptionInput.value = '';
-  amountInput.value = '';
-  descriptionInput.focus();
-}
-
-function deleteTransaction(id) {
-  transactions = transactions.filter(t => t.id !== id);
-  saveToLocalStorage();
-  updateUI();
-}
-
-function handleEditBudget() {
-  const newLimit = prompt('Enter your new monthly budget limit (₹):', monthlyBudget);
-  if (newLimit !== null && !isNaN(newLimit) && parseFloat(newLimit) > 0) {
-    monthlyBudget = parseFloat(newLimit);
-    saveToLocalStorage();
-    updateUI();
-  }
-}
-
-function editSavingsAllocation() {
-  const newSavings = prompt('Enter your separated total savings amount (₹):', totalSavingsAllocated);
-  if (newSavings !== null && !isNaN(newSavings) && parseFloat(newSavings) >= 0) {
-    totalSavingsAllocated = parseFloat(newSavings);
-    saveToLocalStorage();
-    updateUI();
-  }
-}
-
 function getFilteredTransactions() {
   const selectedType = filterType.value;
   const selectedCategory = filterCategory.value;
@@ -492,15 +694,16 @@ function getFilteredTransactions() {
   });
 }
 
+// Main Real-Time Dashboard Calculations
 function updateUI() {
   const filtered = getFilteredTransactions();
 
-  const totalIncome = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-  const totalExpense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
-  const netBalance = totalIncome - totalExpense - totalSavingsAllocated;
+  const allIncome = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + Number(t.amount || 0), 0);
+  const allExpense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + Number(t.amount || 0), 0);
+  const netBalance = allIncome - allExpense - Number(totalSavingsAllocated);
 
-  const filteredIncome = filtered.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-  const filteredExpense = filtered.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+  const filteredIncome = filtered.filter(t => t.type === 'income').reduce((acc, t) => acc + Number(t.amount || 0), 0);
+  const filteredExpense = filtered.filter(t => t.type === 'expense').reduce((acc, t) => acc + Number(t.amount || 0), 0);
 
   totalBalanceEl.textContent = formatCurrency(netBalance);
   totalSavingsEl.textContent = formatCurrency(totalSavingsAllocated);
@@ -510,23 +713,39 @@ function updateUI() {
   const currentMonthStr = new Date().toISOString().slice(0, 7);
   const currentMonthExpenses = transactions
     .filter(t => t.type === 'expense' && t.date.startsWith(currentMonthStr))
-    .reduce((acc, t) => acc + t.amount, 0);
+    .reduce((acc, t) => acc + Number(t.amount || 0), 0);
 
   budgetSpentEl.textContent = formatCurrency(currentMonthExpenses);
   budgetLimitEl.textContent = `/ ${formatCurrency(monthlyBudget)}`;
 
-  const percentage = Math.min(Math.round((currentMonthExpenses / monthlyBudget) * 100), 100);
+  const percentage = monthlyBudget > 0 ? Math.min(Math.round((currentMonthExpenses / monthlyBudget) * 100), 100) : 0;
   budgetProgressBar.style.width = `${percentage}%`;
   budgetText.textContent = `${percentage}% used`;
 
-  if (currentMonthExpenses >= monthlyBudget) {
+  // Key Performance Indicators (KPIs)
+  const savingsRate = allIncome > 0 ? Math.round(((allIncome - allExpense) / allIncome) * 100) : 0;
+  kpiSavingsRate.textContent = `${Math.max(0, savingsRate)}%`;
+
+  const daysInMonth = new Date().getDate();
+  const dailyAvg = daysInMonth > 0 ? currentMonthExpenses / daysInMonth : 0;
+  kpiDailyAvg.textContent = formatCurrency(dailyAvg);
+  kpiMonthSpend.textContent = formatCurrency(currentMonthExpenses);
+
+  let score = 100;
+  if (percentage > 80) score -= 20;
+  if (percentage >= 100) score -= 30;
+  if (savingsRate < 20) score -= 20;
+  kpiHealthScore.textContent = `${Math.max(0, score)} / 100`;
+
+  // Dynamic Alert Banners
+  if (currentMonthExpenses >= monthlyBudget && monthlyBudget > 0) {
     budgetProgressBar.className = 'bg-red-500 h-2 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]';
     budgetAlert.className = 'mb-6 p-4 rounded-xl border flex items-center justify-between transition-all duration-500 bg-red-500/10 border-red-500/40 text-red-300';
     alertIcon.className = 'fa-solid fa-triangle-exclamation text-red-400 text-xl';
     alertTitle.textContent = 'Budget Limit Exceeded!';
     alertDesc.textContent = `Spent ${formatCurrency(currentMonthExpenses)} which exceeds your limit of ${formatCurrency(monthlyBudget)}.`;
     budgetAlert.classList.remove('hidden');
-  } else if (currentMonthExpenses >= monthlyBudget * 0.8) {
+  } else if (currentMonthExpenses >= monthlyBudget * 0.8 && monthlyBudget > 0) {
     budgetProgressBar.className = 'bg-amber-500 h-2 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]';
     budgetAlert.className = 'mb-6 p-4 rounded-xl border flex items-center justify-between transition-all duration-500 bg-amber-500/10 border-amber-500/40 text-amber-300';
     alertIcon.className = 'fa-solid fa-circle-exclamation text-amber-400 text-xl';
@@ -542,6 +761,7 @@ function updateUI() {
   renderCharts(filtered);
 }
 
+// READ Transaction List with Full Action Controls
 function renderTransactionList(items) {
   transactionList.innerHTML = '';
   if (items.length === 0) {
@@ -575,13 +795,21 @@ function renderTransactionList(items) {
           </div>
         </div>
       </div>
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-3">
         <span class="font-extrabold text-sm ${isExpense ? 'text-red-400' : 'text-emerald-400'}">
           ${isExpense ? '-' : '+'}${formatCurrency(t.amount)}
         </span>
-        <button onclick="deleteTransaction(${t.id})" class="text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition p-1" title="Delete">
-          <i class="fa-solid fa-trash-can text-xs"></i>
-        </button>
+        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+          <button onclick="duplicateTransaction(${t.id})" class="text-slate-500 hover:text-indigo-400 p-1" title="Duplicate (Create)">
+            <i class="fa-solid fa-clone text-xs"></i>
+          </button>
+          <button onclick="openEditTxModal(${t.id})" class="text-slate-500 hover:text-blue-400 p-1" title="Edit (Update)">
+            <i class="fa-solid fa-pen text-xs"></i>
+          </button>
+          <button onclick="deleteTransaction(${t.id})" class="text-slate-500 hover:text-red-400 p-1" title="Delete">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+        </div>
       </div>
     `;
     transactionList.appendChild(li);
@@ -591,7 +819,7 @@ function renderTransactionList(items) {
 function renderCharts(items) {
   const expenseItems = items.filter(t => t.type === 'expense');
   const catTotals = {};
-  expenseItems.forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + t.amount; });
+  expenseItems.forEach(t => { catTotals[t.category] = (catTotals[t.category] || 0) + Number(t.amount); });
 
   const catLabels = Object.keys(catTotals);
   const catData = Object.values(catTotals);
@@ -622,8 +850,8 @@ function renderCharts(items) {
   const ctxTrend = document.getElementById('trendChart').getContext('2d');
   if (trendChartInstance) trendChartInstance.destroy();
 
-  const totalInc = items.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0);
-  const totalExp = items.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0);
+  const totalInc = items.filter(t => t.type === 'income').reduce((a, b) => a + Number(b.amount), 0);
+  const totalExp = items.filter(t => t.type === 'expense').reduce((a, b) => a + Number(b.amount), 0);
 
   trendChartInstance = new Chart(ctxTrend, {
     type: 'bar',
@@ -647,7 +875,7 @@ function renderCharts(items) {
 }
 
 function formatCurrency(amount) {
-  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(amount);
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(amount || 0);
 }
 
 function exportToCSV() {
