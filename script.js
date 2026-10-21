@@ -11,8 +11,6 @@ let authMode = 'login';
 let currentSavOp = 'add'; 
 let currentBudOp = 'add'; 
 
-const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
-
 const categories = {
   expense: ['Food & Dining', 'Housing', 'Transport', 'Utilities', 'Entertainment', 'Shopping', 'Health', 'Education', 'Savings Allocation', 'Other Expense'],
   income: ['Salary', 'Freelance', 'Investments', 'Business', 'Gifts', 'Other Income']
@@ -85,7 +83,6 @@ const modalProfileMobile = document.getElementById('modalProfileMobile');
 const modalProfileBudget = document.getElementById('modalProfileBudget');
 const modalProfileSavings = document.getElementById('modalProfileSavings');
 const modalProfileEntries = document.getElementById('modalProfileEntries');
-const modalProfileLastActive = document.getElementById('modalProfileLastActive');
 const profileDisplayName = document.getElementById('profileDisplayName');
 
 const transactionForm = document.getElementById('transactionForm');
@@ -95,6 +92,13 @@ const dateInput = document.getElementById('date');
 const categorySelect = document.getElementById('category');
 const typeExpenseBtn = document.getElementById('typeExpenseBtn');
 const typeIncomeBtn = document.getElementById('typeIncomeBtn');
+
+const splitExpenseSection = document.getElementById('splitExpenseSection');
+const enableSplit = document.getElementById('enableSplit');
+const splitFields = document.getElementById('splitFields');
+const splitFriends = document.getElementById('splitFriends');
+const splitSharePreview = document.getElementById('splitSharePreview');
+const splitOwedSummary = document.getElementById('splitOwedSummary');
 
 const totalBalanceEl = document.getElementById('totalBalance');
 const totalSavingsEl = document.getElementById('totalSavings');
@@ -127,16 +131,13 @@ let expenseCategoryChartInstance = null;
 let incomeCategoryChartInstance = null;
 let trendChartInstance = null;
 
-// Helper: Standardize Date Formats (handles YYYY-MM-DD and DD-MM-YYYY)
 function getYearMonth(dateStr) {
   if (!dateStr) return '';
   if (dateStr.includes('-')) {
     const parts = dateStr.split('-');
     if (parts[0].length === 4) {
-      // YYYY-MM-DD
       return `${parts[0]}-${parts[1]}`;
     } else if (parts[2] && parts[2].length === 4) {
-      // DD-MM-YYYY
       return `${parts[2]}-${parts[1]}`;
     }
   }
@@ -157,6 +158,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   typeExpenseBtn.addEventListener('click', () => setType('expense'));
   typeIncomeBtn.addEventListener('click', () => setType('income'));
+  amountInput.addEventListener('input', calculateSplitValues);
+  splitFriends.addEventListener('input', calculateSplitValues);
   transactionForm.addEventListener('submit', handleFormSubmit);
   
   filterType.addEventListener('change', updateUI);
@@ -168,7 +171,6 @@ document.addEventListener('DOMContentLoaded', () => {
   resetBtn.addEventListener('click', resetAllData);
 });
 
-// Profile & Auth
 function refreshProfilesFromStorage() {
   userProfiles = JSON.parse(localStorage.getItem('spideyUserProfiles')) || {};
 }
@@ -182,16 +184,7 @@ function checkAuthStatus() {
   }
 
   const user = userProfiles[currentMobile];
-  const lastActive = Number(user.lastLoginTimestamp) || 0;
-  const now = Date.now();
-
-  if (now - lastActive > FIFTEEN_DAYS_MS) {
-    alert("Session expired due to 15 days of inactivity. Please enter your PIN to login.");
-    promptLogin(true);
-    return;
-  }
-
-  user.lastLoginTimestamp = now;
+  user.lastLoginTimestamp = Date.now();
   saveProfilesToStorage();
 
   authModal.classList.add('hidden');
@@ -201,13 +194,10 @@ function checkAuthStatus() {
   updateUI();
 }
 
-function promptLogin(requirePinOnly = false) {
+function promptLogin() {
   authCloseBtn.classList.add('hidden');
   authModal.classList.remove('hidden');
   populateQuickProfilesDropdown();
-  if (requirePinOnly && currentMobile) {
-    authMobile.value = currentMobile;
-  }
   switchAuthTab('login');
 }
 
@@ -222,9 +212,6 @@ function openProfileModal() {
   modalProfileBudget.textContent = formatCurrency(user.monthlyBudget || 25000);
   modalProfileSavings.textContent = formatCurrency(user.totalSavingsAllocated || 0);
   modalProfileEntries.textContent = `${user.transactions ? user.transactions.length : 0} Recorded Entries`;
-
-  const lastActiveDate = user.lastLoginTimestamp ? new Date(user.lastLoginTimestamp).toLocaleDateString() : 'Active Now';
-  modalProfileLastActive.textContent = lastActiveDate;
 
   profileModal.classList.remove('hidden');
 }
@@ -386,7 +373,7 @@ function handleAuthSubmit(e) {
     }
     const user = userProfiles[mobile];
     if (user.secAnswer !== secA) {
-      alert("Security answer verification failed! Please enter the correct answer.");
+      alert("Security answer verification failed!");
       return;
     }
     user.pin = pin;
@@ -411,6 +398,97 @@ function logoutProfile() {
   currentMobile = null;
   localStorage.removeItem('currentActiveMobile');
   checkAuthStatus();
+}
+
+// Cross-Device Sync: Export Profile Backup file (.json)
+function exportProfileBackup() {
+  if (!currentMobile || !userProfiles[currentMobile]) {
+    alert("No active profile to export.");
+    return;
+  }
+  const profileData = {
+    mobile: currentMobile,
+    data: userProfiles[currentMobile]
+  };
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(profileData, null, 2));
+  const downloadAnchor = document.createElement('a');
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", `spidey_profile_${currentMobile}.json`);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+}
+
+// Cross-Device Sync: Import Profile Backup file (.json)
+function importProfileBackup(event) {
+  const fileReader = new FileReader();
+  if (event.target.files[0]) {
+    fileReader.readAsText(event.target.files[0], "UTF-8");
+    fileReader.onload = (e) => {
+      try {
+        const imported = JSON.parse(e.target.result);
+        if (!imported.mobile || !imported.data) {
+          throw new Error("Invalid format");
+        }
+        refreshProfilesFromStorage();
+        userProfiles[imported.mobile] = imported.data;
+        saveProfilesToStorage();
+        alert(`Profile for +91 ${imported.mobile} imported successfully! Logging you in...`);
+        loginUser(imported.mobile);
+        closeProfileModal();
+      } catch (err) {
+        alert("Failed to import profile. Make sure it's a valid Spidey Profile backup file.");
+      }
+    };
+  }
+}
+
+// Split Expense UI & Logic Helpers
+function toggleSplitSection() {
+  if (enableSplit.checked) {
+    splitFields.classList.remove('hidden');
+    calculateSplitValues();
+  } else {
+    splitFields.classList.add('hidden');
+  }
+}
+
+function calculateSplitValues() {
+  if (!enableSplit.checked) return;
+  const totalAmount = parseFloat(amountInput.value) || 0;
+  const friendsRaw = splitFriends.value.trim();
+  const friendsList = friendsRaw ? friendsRaw.split(',').map(f => f.trim()).filter(Boolean) : [];
+  
+  const totalPeople = friendsList.length + 1; // You + Friends
+  const sharePerPerson = totalPeople > 0 ? totalAmount / totalPeople : totalAmount;
+
+  splitSharePreview.textContent = formatCurrency(sharePerPerson);
+
+  if (friendsList.length > 0) {
+    const totalOwedToYou = sharePerPerson * friendsList.length;
+    let summaryHtml = `<strong>Total Owed to You: ${formatCurrency(totalOwedToYou)}</strong><br>`;
+    friendsList.forEach(f => {
+      summaryHtml += `${f} owes you ${formatCurrency(sharePerPerson)}<br>`;
+    });
+    splitOwedSummary.innerHTML = summaryHtml;
+    splitOwedSummary.classList.remove('hidden');
+  } else {
+    splitOwedSummary.classList.add('hidden');
+  }
+}
+
+// Toggle Settlement (Check/Uncheck Payment Status)
+function toggleFriendPayment(txId, friendName, isPaid) {
+  const tx = transactions.find(t => t.id === txId);
+  if (!tx || !tx.split) return;
+
+  if (!tx.split.paidStatus) {
+    tx.split.paidStatus = {};
+  }
+
+  tx.split.paidStatus[friendName] = isPaid;
+  saveToLocalStorage();
+  updateUI();
 }
 
 // Savings CRUD
@@ -607,24 +685,57 @@ function duplicateTransaction(id) {
 function handleFormSubmit(e) {
   e.preventDefault();
 
-  const newAmount = parseFloat(amountInput.value);
-  if (isNaN(newAmount) || newAmount <= 0) return;
+  const totalInputAmount = parseFloat(amountInput.value);
+  if (isNaN(totalInputAmount) || totalInputAmount <= 0) return;
+
+  let finalAmount = totalInputAmount;
+  let splitData = null;
+
+  // Handle Split Calculations
+  if (currentType === 'expense' && enableSplit.checked) {
+    const friendsRaw = splitFriends.value.trim();
+    const friendsList = friendsRaw ? friendsRaw.split(',').map(f => f.trim()).filter(Boolean) : [];
+    
+    if (friendsList.length > 0) {
+      const totalPeople = friendsList.length + 1;
+      const sharePerPerson = totalInputAmount / totalPeople;
+      
+      const paidStatusObj = {};
+      friendsList.forEach(f => {
+        paidStatusObj[f] = false; // Initially unpaid
+      });
+
+      // Your personal expense is only your share
+      finalAmount = sharePerPerson;
+      splitData = {
+        totalBill: totalInputAmount,
+        friends: friendsList,
+        perPersonShare: sharePerPerson,
+        paidStatus: paidStatusObj
+      };
+    }
+  }
 
   const newTransaction = {
     id: Date.now(),
     type: currentType,
     description: descriptionInput.value.trim(),
-    amount: newAmount,
+    amount: finalAmount,
     category: categorySelect.value,
-    date: dateInput.value
+    date: dateInput.value,
+    split: splitData
   };
 
   transactions.unshift(newTransaction);
   saveToLocalStorage();
   updateUI();
 
+  // Reset Form
   descriptionInput.value = '';
   amountInput.value = '';
+  enableSplit.checked = false;
+  splitFriends.value = '';
+  splitFields.classList.add('hidden');
   descriptionInput.focus();
 }
 
@@ -674,9 +785,13 @@ function setType(type) {
   if (type === 'expense') {
     typeExpenseBtn.className = 'type-btn active py-3 px-3 rounded-xl border border-red-500/50 bg-red-500/20 text-red-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.2)] min-h-[44px]';
     typeIncomeBtn.className = 'type-btn py-3 px-3 rounded-xl border border-slate-800 bg-slate-900/50 text-slate-400 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 min-h-[44px]';
+    splitExpenseSection.classList.remove('hidden');
   } else {
     typeIncomeBtn.className = 'type-btn active py-3 px-3 rounded-xl border border-emerald-500/50 bg-emerald-500/20 text-emerald-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.2)] min-h-[44px]';
     typeExpenseBtn.className = 'type-btn py-3 px-3 rounded-xl border border-slate-800 bg-slate-900/50 text-slate-400 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 min-h-[44px]';
+    splitExpenseSection.classList.add('hidden');
+    enableSplit.checked = false;
+    splitFields.classList.add('hidden');
   }
   populateCategoryOptions();
 }
@@ -705,7 +820,7 @@ function populateFilterCategories() {
 function getFilteredTransactions() {
   const selectedType = filterType.value;
   const selectedCategory = filterCategory.value;
-  const selectedMonth = filterMonth.value; // e.g. "2026-10"
+  const selectedMonth = filterMonth.value;
   const searchTerm = searchInput.value.toLowerCase().trim();
 
   return transactions.filter(t => {
@@ -731,7 +846,7 @@ function updateUI() {
   totalIncomeEl.textContent = formatCurrency(allIncome);
   totalExpenseEl.textContent = formatCurrency(allExpense);
 
-  // 2. Active Selected Month Calculations (matches format via getYearMonth)
+  // 2. Active Selected Month Calculations
   const activeMonthStr = filterMonth.value || getYearMonth(new Date().toISOString().slice(0, 10));
   const selectedMonthExpenses = transactions
     .filter(t => t.type === 'expense' && getYearMonth(t.date) === activeMonthStr)
@@ -786,7 +901,7 @@ function updateUI() {
   renderCharts(filtered);
 }
 
-// Render Transaction Records Table
+// Render Transaction Records Table with Settlement Tracking
 function renderTransactionList(items) {
   transactionList.innerHTML = '';
   if (items.length === 0) {
@@ -802,40 +917,89 @@ function renderTransactionList(items) {
     const isExpense = t.type === 'expense';
     const color = categoryColors[t.category] || (isExpense ? '#ef4444' : '#10b981');
 
+    let splitHtml = '';
+    if (t.split && t.split.friends && t.split.friends.length > 0) {
+      const paidStatus = t.split.paidStatus || {};
+      const share = t.split.perPersonShare;
+
+      const uncollectedFriends = [];
+      let friendCheckboxesHtml = '';
+
+      t.split.friends.forEach(f => {
+        const isPaid = !!paidStatus[f];
+        if (!isPaid) uncollectedFriends.push(f);
+
+        friendCheckboxesHtml += `
+          <label class="inline-flex items-center gap-1 bg-slate-950 px-2 py-1 rounded border border-slate-800 text-[11px] cursor-pointer hover:border-slate-700">
+            <input type="checkbox" ${isPaid ? 'checked' : ''} onchange="toggleFriendPayment(${t.id}, '${f}', this.checked)" class="w-3.5 h-3.5 rounded text-emerald-500 bg-slate-900 border-slate-700 focus:ring-0">
+            <span class="${isPaid ? 'text-emerald-400 line-through opacity-80' : 'text-slate-200'}">${escapeHtml(f)}</span>
+            <span class="text-[10px] text-slate-500">(${formatCurrency(share)})</span>
+          </label>
+        `;
+      });
+
+      const unpaidBalance = uncollectedFriends.length * share;
+
+      let summaryText = '';
+      if (uncollectedFriends.length === 0) {
+        summaryText = `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check"></i> Fully Settled</span>`;
+      } else {
+        summaryText = `<span class="text-amber-400 font-bold">Unpaid Balance: ${formatCurrency(unpaidBalance)}</span> (Pending: <span class="text-red-400 font-semibold">${uncollectedFriends.join(', ')}</span>)`;
+      }
+
+      splitHtml = `
+        <div class="mt-2.5 p-2.5 bg-slate-950/70 rounded-xl border border-indigo-500/20 text-xs space-y-2">
+          <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 pb-1 border-b border-slate-800">
+            <span><i class="fa-solid fa-users text-indigo-400"></i> Total Bill: <strong class="text-slate-200">${formatCurrency(t.split.totalBill)}</strong></span>
+            <span>Check box when paid:</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            ${friendCheckboxesHtml}
+          </div>
+          <div class="text-[11px] pt-1">
+            ${summaryText}
+          </div>
+        </div>
+      `;
+    }
+
     const li = document.createElement('li');
-    li.className = 'bg-slate-900/60 hover:bg-slate-900 border border-slate-800 rounded-xl p-3 sm:p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all duration-300 group animate-slide-in';
+    li.className = 'bg-slate-900/60 hover:bg-slate-900 border border-slate-800 rounded-xl p-3 sm:p-3.5 flex flex-col justify-between gap-3 transition-all duration-300 group animate-slide-in';
 
     li.innerHTML = `
-      <div class="flex items-center gap-3 w-full sm:w-auto">
-        <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs shrink-0" style="background-color: ${color}20; color: ${color};">
-          <i class="fa-solid ${isExpense ? 'fa-arrow-down-long' : 'fa-arrow-up-long'}"></i>
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs shrink-0" style="background-color: ${color}20; color: ${color};">
+            <i class="fa-solid ${isExpense ? 'fa-arrow-down-long' : 'fa-arrow-up-long'}"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <h4 class="font-semibold text-sm text-slate-100 truncate">${escapeHtml(t.description)}</h4>
+            <div class="flex flex-wrap items-center gap-2 mt-0.5">
+              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full" style="background-color: ${color}20; color: ${color}">
+                ${t.category}
+              </span>
+              <span class="text-[11px] text-slate-500">${t.date}</span>
+            </div>
+          </div>
         </div>
-        <div class="min-w-0 flex-1">
-          <h4 class="font-semibold text-sm text-slate-100 truncate">${escapeHtml(t.description)}</h4>
-          <div class="flex flex-wrap items-center gap-2 mt-0.5">
-            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full" style="background-color: ${color}20; color: ${color}">
-              ${t.category}
-            </span>
-            <span class="text-[11px] text-slate-500">${t.date}</span>
+        <div class="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/80">
+          <span class="font-extrabold text-sm ${isExpense ? 'text-red-400' : 'text-emerald-400'}">
+            ${isExpense ? '-' : '+'}${formatCurrency(t.amount)}
+          </span>
+          <div class="flex items-center gap-1.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition">
+            <button onclick="duplicateTransaction(${t.id})" class="text-slate-400 hover:text-indigo-400 p-2 min-w-[36px] min-h-[36px] flex items-center justify-center bg-slate-800/50 sm:bg-transparent rounded-lg" title="Duplicate">
+              <i class="fa-solid fa-clone text-xs"></i>
+            </button>
+            <button onclick="openEditTxModal(${t.id})" class="text-slate-400 hover:text-blue-400 p-2 min-w-[36px] min-h-[36px] flex items-center justify-center bg-slate-800/50 sm:bg-transparent rounded-lg" title="Edit">
+              <i class="fa-solid fa-pen text-xs"></i>
+            </button>
+            <button onclick="deleteTransaction(${t.id})" class="text-slate-400 hover:text-red-400 p-2 min-w-[36px] min-h-[36px] flex items-center justify-center bg-slate-800/50 sm:bg-transparent rounded-lg" title="Delete">
+              <i class="fa-solid fa-trash-can text-xs"></i>
+            </button>
           </div>
         </div>
       </div>
-      <div class="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/80">
-        <span class="font-extrabold text-sm ${isExpense ? 'text-red-400' : 'text-emerald-400'}">
-          ${isExpense ? '-' : '+'}${formatCurrency(t.amount)}
-        </span>
-        <div class="flex items-center gap-1.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition">
-          <button onclick="duplicateTransaction(${t.id})" class="text-slate-400 hover:text-indigo-400 p-2 min-w-[36px] min-h-[36px] flex items-center justify-center bg-slate-800/50 sm:bg-transparent rounded-lg" title="Duplicate">
-            <i class="fa-solid fa-clone text-xs"></i>
-          </button>
-          <button onclick="openEditTxModal(${t.id})" class="text-slate-400 hover:text-blue-400 p-2 min-w-[36px] min-h-[36px] flex items-center justify-center bg-slate-800/50 sm:bg-transparent rounded-lg" title="Edit">
-            <i class="fa-solid fa-pen text-xs"></i>
-          </button>
-          <button onclick="deleteTransaction(${t.id})" class="text-slate-400 hover:text-red-400 p-2 min-w-[36px] min-h-[36px] flex items-center justify-center bg-slate-800/50 sm:bg-transparent rounded-lg" title="Delete">
-            <i class="fa-solid fa-trash-can text-xs"></i>
-          </button>
-        </div>
-      </div>
+      ${splitHtml}
     `;
     transactionList.appendChild(li);
   });
@@ -843,7 +1007,6 @@ function renderTransactionList(items) {
 
 // Render Doughnut & Bar Charts
 function renderCharts(items) {
-  // 1. Expense Doughnut Chart
   const expenseItems = items.filter(t => t.type === 'expense');
   const expCatTotals = {};
   expenseItems.forEach(t => { expCatTotals[t.category] = (expCatTotals[t.category] || 0) + Number(t.amount); });
@@ -873,7 +1036,6 @@ function renderCharts(items) {
     }
   });
 
-  // 2. Income Doughnut Chart
   const incomeItems = items.filter(t => t.type === 'income');
   const incCatTotals = {};
   incomeItems.forEach(t => { incCatTotals[t.category] = (incCatTotals[t.category] || 0) + Number(t.amount); });
@@ -903,7 +1065,6 @@ function renderCharts(items) {
     }
   });
 
-  // 3. Trend Cash Flow Bar Chart
   const ctxTrend = document.getElementById('trendChart').getContext('2d');
   if (trendChartInstance) trendChartInstance.destroy();
 
