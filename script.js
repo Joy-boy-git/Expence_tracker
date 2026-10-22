@@ -666,7 +666,6 @@ function openEditTxModal(id) {
   editTxId.value = tx.id;
   editTxType.value = tx.type;
   editTxDesc.value = tx.description;
-  // If it's a split expense, display the total bill amount in the edit box
   const displayAmount = tx.split ? tx.split.totalBill : tx.amount;
   editTxAmount.value = displayAmount;
   editTxDate.value = tx.date;
@@ -925,7 +924,21 @@ function updateUI() {
   // 1. All-Time Totals
   const allIncome = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + Number(t.amount || 0), 0);
   const allExpense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + Number(t.amount || 0), 0);
-  const netBalance = allIncome - allExpense - Number(totalSavingsAllocated);
+  
+  // Calculate total uncollected (pending) split amounts across all transactions
+  let totalUncollected = 0;
+  transactions.forEach(t => {
+    if (t.split && t.split.friends && t.split.paidStatus) {
+      t.split.friends.forEach(f => {
+        if (!t.split.paidStatus[f]) {
+          totalUncollected += Number(t.split.perPersonShare || 0);
+        }
+      });
+    }
+  });
+
+  // Net Balance = Income - Expenses - Uncollected Split Owed - Savings
+  const netBalance = allIncome - allExpense - totalUncollected - Number(totalSavingsAllocated);
 
   totalBalanceEl.textContent = formatCurrency(netBalance);
   totalSavingsEl.textContent = formatCurrency(totalSavingsAllocated);
@@ -982,9 +995,51 @@ function updateUI() {
     budgetAlert.classList.add('hidden');
   }
 
+  // 6. Render Friends Name-wise Totals Summary Card
+  renderFriendsBalances();
+
   // 5. Render History & Analytics Charts
   renderTransactionList(filtered);
   renderCharts(filtered);
+}
+
+// Render Name-wise Totals Owed to You Card
+function renderFriendsBalances() {
+  const friendTotals = {};
+  transactions.forEach(t => {
+    if (t.split && t.split.friends) {
+      const paidStatus = t.split.paidStatus || {};
+      const share = Number(t.split.perPersonShare || 0);
+      t.split.friends.forEach(f => {
+        if (!paidStatus[f]) {
+          friendTotals[f] = (friendTotals[f] || 0) + share;
+        }
+      });
+    }
+  });
+
+  const container = document.getElementById('friendsBalanceList');
+  const card = document.getElementById('friendsBalanceCard');
+  const names = Object.keys(friendTotals);
+
+  if (names.length === 0) {
+    card.classList.add('hidden');
+    return;
+  }
+
+  card.classList.remove('hidden');
+  container.innerHTML = '';
+
+  names.forEach(name => {
+    const amount = friendTotals[name];
+    const div = document.createElement('div');
+    div.className = 'bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between';
+    div.innerHTML = `
+      <span class="font-semibold text-slate-200 text-xs">${escapeHtml(name)}</span>
+      <span class="font-extrabold text-amber-400 text-xs">${formatCurrency(amount)}</span>
+    `;
+    container.appendChild(div);
+  });
 }
 
 // Render Transaction Records Table with Settlement Tracking

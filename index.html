@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   
-  <title>Spidey Spend Tracker</title>
+  <title>Spidey Spend Tracker | Personal Expense & Savings Manager</title>
   <meta name="description" content="Manage income, track daily expenses, set budget limits, and manage savings pool with Spidey Spend Tracker.">
 
   <!-- Favicon -->
@@ -188,7 +188,6 @@
   </div>
 
   <!-- EDIT TRANSACTION MODAL -->
- <!-- EDIT TRANSACTION MODAL -->
   <div id="editTxModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto hidden">
     <div class="spidey-card w-full max-w-md rounded-2xl p-5 sm:p-6 shadow-2xl border border-blue-500/40 animate-slide-in relative my-auto max-h-[90vh] overflow-y-auto">
       <button onclick="closeEditTxModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition p-2 min-w-[44px] min-h-[44px] flex items-center justify-center">
@@ -257,6 +256,7 @@
       </form>
     </div>
   </div>
+
   <!-- PROFILE MODAL -->
   <div id="profileModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto hidden">
     <div class="spidey-card w-full max-w-md rounded-2xl p-5 sm:p-8 shadow-2xl border border-red-500/30 animate-slide-in relative my-auto max-h-[90vh] overflow-y-auto">
@@ -353,6 +353,16 @@
           <h4 id="alertTitle" class="font-bold text-sm"></h4>
           <p id="alertDesc" class="text-xs mt-0.5 opacity-90"></p>
         </div>
+      </div>
+    </div>
+
+    <!-- FRIENDS BALANCES / NAME-WISE TOTALS -->
+    <div id="friendsBalanceCard" class="spidey-card rounded-2xl p-4 sm:p-5 shadow-xl mb-6 hidden animate-slide-in">
+      <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-hand-holding-dollar"></i> Pending Split Balances (Owed to You)
+      </h3>
+      <div id="friendsBalanceList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+        <!-- Dynamically populated -->
       </div>
     </div>
 
@@ -481,7 +491,7 @@
               </select>
             </div>
 
-            <!-- SPLIT EXPENSE SECTION (Appears for Expenses) -->
+            <!-- SPLIT EXPENSE SECTION -->
             <div id="splitExpenseSection" class="pt-2 border-t border-slate-800 space-y-3">
               <label class="flex items-center gap-2 text-xs font-semibold text-slate-300 cursor-pointer">
                 <input type="checkbox" id="enableSplit" onchange="toggleSplitSection()" class="w-4 h-4 rounded border-slate-800 bg-slate-900 text-red-500 focus:ring-0">
