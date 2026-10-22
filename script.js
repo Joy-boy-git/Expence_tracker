@@ -75,6 +75,11 @@ const editTxDesc = document.getElementById('editTxDesc');
 const editTxAmount = document.getElementById('editTxAmount');
 const editTxDate = document.getElementById('editTxDate');
 const editTxCategory = document.getElementById('editTxCategory');
+const editSplitExpenseSection = document.getElementById('editSplitExpenseSection');
+const editEnableSplit = document.getElementById('editEnableSplit');
+const editSplitFields = document.getElementById('editSplitFields');
+const editSplitFriends = document.getElementById('editSplitFriends');
+const editSplitSharePreview = document.getElementById('editSplitSharePreview');
 
 const profileModal = document.getElementById('profileModal');
 const profileAvatarInitial = document.getElementById('profileAvatarInitial');
@@ -160,6 +165,8 @@ document.addEventListener('DOMContentLoaded', () => {
   typeIncomeBtn.addEventListener('click', () => setType('income'));
   amountInput.addEventListener('input', calculateSplitValues);
   splitFriends.addEventListener('input', calculateSplitValues);
+  editTxAmount.addEventListener('input', calculateEditSplitValues);
+  editSplitFriends.addEventListener('input', calculateEditSplitValues);
   transactionForm.addEventListener('submit', handleFormSubmit);
   
   filterType.addEventListener('change', updateUI);
@@ -400,7 +407,6 @@ function logoutProfile() {
   checkAuthStatus();
 }
 
-// Cross-Device Sync: Export Profile Backup file (.json)
 function exportProfileBackup() {
   if (!currentMobile || !userProfiles[currentMobile]) {
     alert("No active profile to export.");
@@ -419,7 +425,6 @@ function exportProfileBackup() {
   downloadAnchor.remove();
 }
 
-// Cross-Device Sync: Import Profile Backup file (.json)
 function importProfileBackup(event) {
   const fileReader = new FileReader();
   if (event.target.files[0]) {
@@ -474,6 +479,39 @@ function calculateSplitValues() {
     splitOwedSummary.classList.remove('hidden');
   } else {
     splitOwedSummary.classList.add('hidden');
+  }
+}
+
+// Edit Split Logic Helpers
+function toggleEditSplitSection() {
+  if (editEnableSplit.checked) {
+    editSplitFields.classList.remove('hidden');
+    calculateEditSplitValues();
+  } else {
+    editSplitFields.classList.add('hidden');
+  }
+}
+
+function calculateEditSplitValues() {
+  if (!editEnableSplit.checked) return;
+  const totalAmount = parseFloat(editTxAmount.value) || 0;
+  const friendsRaw = editSplitFriends.value.trim();
+  const friendsList = friendsRaw ? friendsRaw.split(',').map(f => f.trim()).filter(Boolean) : [];
+  
+  const totalPeople = friendsList.length + 1;
+  const sharePerPerson = totalPeople > 0 ? totalAmount / totalPeople : totalAmount;
+
+  editSplitSharePreview.textContent = formatCurrency(sharePerPerson);
+}
+
+function onEditTypeChange() {
+  populateEditCategoryOptions();
+  if (editTxType.value === 'expense') {
+    editSplitExpenseSection.classList.remove('hidden');
+  } else {
+    editSplitExpenseSection.classList.add('hidden');
+    editEnableSplit.checked = false;
+    editSplitFields.classList.add('hidden');
   }
 }
 
@@ -628,11 +666,31 @@ function openEditTxModal(id) {
   editTxId.value = tx.id;
   editTxType.value = tx.type;
   editTxDesc.value = tx.description;
-  editTxAmount.value = tx.amount;
+  // If it's a split expense, display the total bill amount in the edit box
+  const displayAmount = tx.split ? tx.split.totalBill : tx.amount;
+  editTxAmount.value = displayAmount;
   editTxDate.value = tx.date;
 
   populateEditCategoryOptions();
   editTxCategory.value = tx.category;
+
+  if (tx.type === 'expense') {
+    editSplitExpenseSection.classList.remove('hidden');
+    if (tx.split && tx.split.friends) {
+      editEnableSplit.checked = true;
+      editSplitFields.classList.remove('hidden');
+      editSplitFriends.value = tx.split.friends.join(', ');
+      calculateEditSplitValues();
+    } else {
+      editEnableSplit.checked = false;
+      editSplitFields.classList.add('hidden');
+      editSplitFriends.value = '';
+    }
+  } else {
+    editSplitExpenseSection.classList.add('hidden');
+    editEnableSplit.checked = false;
+    editSplitFields.classList.add('hidden');
+  }
 
   editTxModal.classList.remove('hidden');
 }
@@ -659,11 +717,41 @@ function saveEditedTransaction(e) {
   const txIndex = transactions.findIndex(t => t.id === id);
 
   if (txIndex !== -1) {
-    transactions[txIndex].type = editTxType.value;
+    const type = editTxType.value;
+    const totalInputAmount = parseFloat(editTxAmount.value);
+    let finalAmount = totalInputAmount;
+    let splitData = null;
+
+    if (type === 'expense' && editEnableSplit.checked) {
+      const friendsRaw = editSplitFriends.value.trim();
+      const friendsList = friendsRaw ? friendsRaw.split(',').map(f => f.trim()).filter(Boolean) : [];
+      
+      if (friendsList.length > 0) {
+        const totalPeople = friendsList.length + 1;
+        const sharePerPerson = totalInputAmount / totalPeople;
+        
+        const oldSplit = transactions[txIndex].split;
+        const paidStatusObj = {};
+        friendsList.forEach(f => {
+          paidStatusObj[f] = (oldSplit && oldSplit.paidStatus && oldSplit.paidStatus[f]) ? oldSplit.paidStatus[f] : false;
+        });
+
+        finalAmount = sharePerPerson;
+        splitData = {
+          totalBill: totalInputAmount,
+          friends: friendsList,
+          perPersonShare: sharePerPerson,
+          paidStatus: paidStatusObj
+        };
+      }
+    }
+
+    transactions[txIndex].type = type;
     transactions[txIndex].description = editTxDesc.value.trim();
-    transactions[txIndex].amount = parseFloat(editTxAmount.value);
+    transactions[txIndex].amount = finalAmount;
     transactions[txIndex].date = editTxDate.value;
     transactions[txIndex].category = editTxCategory.value;
+    transactions[txIndex].split = splitData;
 
     saveToLocalStorage();
     updateUI();
@@ -691,7 +779,6 @@ function handleFormSubmit(e) {
   let finalAmount = totalInputAmount;
   let splitData = null;
 
-  // Handle Split Calculations
   if (currentType === 'expense' && enableSplit.checked) {
     const friendsRaw = splitFriends.value.trim();
     const friendsList = friendsRaw ? friendsRaw.split(',').map(f => f.trim()).filter(Boolean) : [];
@@ -705,7 +792,6 @@ function handleFormSubmit(e) {
         paidStatusObj[f] = false; // Initially unpaid
       });
 
-      // Your personal expense is only your share
       finalAmount = sharePerPerson;
       splitData = {
         totalBill: totalInputAmount,
