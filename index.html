@@ -225,10 +225,16 @@
           </div>
         </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Category</label>
-          <select id="editTxCategory" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500">
-          </select>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Category</label>
+            <select id="editTxCategory" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500">
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Bank / Wallet</label>
+            <input type="text" id="editTxBank" placeholder="e.g. HDFC, SBI, Cash" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500">
+          </div>
         </div>
 
         <!-- EDIT SPLIT EXPENSE SECTION -->
@@ -353,6 +359,16 @@
           <h4 id="alertTitle" class="font-bold text-sm"></h4>
           <p id="alertDesc" class="text-xs mt-0.5 opacity-90"></p>
         </div>
+      </div>
+    </div>
+
+    <!-- BANK BALANCES BREAKDOWN CARD -->
+    <div id="bankBalancesCard" class="spidey-card rounded-2xl p-4 sm:p-5 shadow-xl mb-6 hidden animate-slide-in">
+      <h3 class="text-xs font-bold uppercase tracking-wider text-blue-400 mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-building-columns"></i> Bank Accounts & Wallets Breakdown
+      </h3>
+      <div id="bankBalancesList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+        <!-- Dynamically populated -->
       </div>
     </div>
 
@@ -485,10 +501,16 @@
               </div>
             </div>
 
-            <div>
-              <label for="category" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Category</label>
-              <select id="category" required class="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-red-500 transition-all">
-              </select>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="category" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Category</label>
+                <select id="category" required class="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-red-500 transition-all">
+                </select>
+              </div>
+              <div>
+                <label for="bank" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Bank / Wallet</label>
+                <input type="text" id="bank" placeholder="e.g. HDFC, SBI, Cash" required value="Cash" class="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:border-red-500 transition-all">
+              </div>
             </div>
 
             <!-- SPLIT EXPENSE SECTION -->

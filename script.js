@@ -75,6 +75,7 @@ const editTxDesc = document.getElementById('editTxDesc');
 const editTxAmount = document.getElementById('editTxAmount');
 const editTxDate = document.getElementById('editTxDate');
 const editTxCategory = document.getElementById('editTxCategory');
+const editTxBank = document.getElementById('editTxBank');
 const editSplitExpenseSection = document.getElementById('editSplitExpenseSection');
 const editEnableSplit = document.getElementById('editEnableSplit');
 const editSplitFields = document.getElementById('editSplitFields');
@@ -95,6 +96,7 @@ const descriptionInput = document.getElementById('description');
 const amountInput = document.getElementById('amount');
 const dateInput = document.getElementById('date');
 const categorySelect = document.getElementById('category');
+const bankInput = document.getElementById('bank');
 const typeExpenseBtn = document.getElementById('typeExpenseBtn');
 const typeIncomeBtn = document.getElementById('typeIncomeBtn');
 
@@ -582,6 +584,7 @@ function executeSavingsMath(e) {
         description: 'Savings Transfer Deposit',
         amount: val,
         category: 'Savings Allocation',
+        bank: 'Savings Vault',
         date: today
       });
     }
@@ -594,6 +597,7 @@ function executeSavingsMath(e) {
         description: 'Savings Withdrawal Transfer',
         amount: val,
         category: 'Other Income',
+        bank: 'Cash',
         date: today
       });
     }
@@ -669,6 +673,7 @@ function openEditTxModal(id) {
   const displayAmount = tx.split ? tx.split.totalBill : tx.amount;
   editTxAmount.value = displayAmount;
   editTxDate.value = tx.date;
+  editTxBank.value = tx.bank || 'Cash';
 
   populateEditCategoryOptions();
   editTxCategory.value = tx.category;
@@ -718,6 +723,7 @@ function saveEditedTransaction(e) {
   if (txIndex !== -1) {
     const type = editTxType.value;
     const totalInputAmount = parseFloat(editTxAmount.value);
+    const bankName = editTxBank.value.trim() || 'Cash';
     let finalAmount = totalInputAmount;
     let splitData = null;
 
@@ -748,6 +754,7 @@ function saveEditedTransaction(e) {
     transactions[txIndex].type = type;
     transactions[txIndex].description = editTxDesc.value.trim();
     transactions[txIndex].amount = finalAmount;
+    transactions[txIndex].bank = bankName;
     transactions[txIndex].date = editTxDate.value;
     transactions[txIndex].category = editTxCategory.value;
     transactions[txIndex].split = splitData;
@@ -775,6 +782,7 @@ function handleFormSubmit(e) {
   const totalInputAmount = parseFloat(amountInput.value);
   if (isNaN(totalInputAmount) || totalInputAmount <= 0) return;
 
+  const bankName = bankInput.value.trim() || 'Cash';
   let finalAmount = totalInputAmount;
   let splitData = null;
 
@@ -806,6 +814,7 @@ function handleFormSubmit(e) {
     type: currentType,
     description: descriptionInput.value.trim(),
     amount: finalAmount,
+    bank: bankName,
     category: categorySelect.value,
     date: dateInput.value,
     split: splitData
@@ -818,6 +827,7 @@ function handleFormSubmit(e) {
   // Reset Form
   descriptionInput.value = '';
   amountInput.value = '';
+  bankInput.value = 'Cash';
   enableSplit.checked = false;
   splitFriends.value = '';
   splitFields.classList.add('hidden');
@@ -912,7 +922,7 @@ function getFilteredTransactions() {
     const matchesType = selectedType === 'all' || t.type === selectedType;
     const matchesCategory = selectedCategory === 'all' || t.category === selectedCategory;
     const matchesMonth = !selectedMonth || (getYearMonth(t.date) === selectedMonth);
-    const matchesSearch = t.description.toLowerCase().includes(searchTerm) || t.category.toLowerCase().includes(searchTerm);
+    const matchesSearch = t.description.toLowerCase().includes(searchTerm) || t.category.toLowerCase().includes(searchTerm) || (t.bank && t.bank.toLowerCase().includes(searchTerm));
     return matchesType && matchesCategory && matchesMonth && matchesSearch;
   });
 }
@@ -925,7 +935,6 @@ function updateUI() {
   const allIncome = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + Number(t.amount || 0), 0);
   const allExpense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + Number(t.amount || 0), 0);
   
-  // Calculate total uncollected (pending) split amounts across all transactions
   let totalUncollected = 0;
   transactions.forEach(t => {
     if (t.split && t.split.friends && t.split.paidStatus) {
@@ -937,7 +946,6 @@ function updateUI() {
     }
   });
 
-  // Net Balance = Income - Expenses - Uncollected Split Owed - Savings
   const netBalance = allIncome - allExpense - totalUncollected - Number(totalSavingsAllocated);
 
   totalBalanceEl.textContent = formatCurrency(netBalance);
@@ -995,12 +1003,68 @@ function updateUI() {
     budgetAlert.classList.add('hidden');
   }
 
-  // 6. Render Friends Name-wise Totals Summary Card
+  // 5. Render Bank Balances and Friends Balances Cards
+  renderBankBalances();
   renderFriendsBalances();
 
-  // 5. Render History & Analytics Charts
+  // 6. Render History & Analytics Charts
   renderTransactionList(filtered);
   renderCharts(filtered);
+}
+
+// Render Bank Account Balances
+function renderBankBalances() {
+  const bankBalances = {};
+  
+  transactions.forEach(t => {
+    const bankName = t.bank || 'Cash';
+    if (!bankBalances[bankName]) {
+      bankBalances[bankName] = 0;
+    }
+
+    if (t.type === 'income') {
+      bankBalances[bankName] += Number(t.amount || 0);
+    } else if (t.type === 'expense') {
+      // Deduct the full amount paid from the bank (if split, full bill was paid by user)
+      const outgoing = t.split ? Number(t.split.totalBill || 0) : Number(t.amount || 0);
+      bankBalances[bankName] -= outgoing;
+    }
+  });
+
+  // Also add back collected split shares into the respective banks if marked paid
+  transactions.forEach(t => {
+    const bankName = t.bank || 'Cash';
+    if (t.split && t.split.friends && t.split.paidStatus) {
+      t.split.friends.forEach(f => {
+        if (t.split.paidStatus[f]) {
+          bankBalances[bankName] += Number(t.split.perPersonShare || 0);
+        }
+      });
+    }
+  });
+
+  const container = document.getElementById('bankBalancesList');
+  const card = document.getElementById('bankBalancesCard');
+  const bankNames = Object.keys(bankBalances);
+
+  if (bankNames.length === 0) {
+    card.classList.add('hidden');
+    return;
+  }
+
+  card.classList.remove('hidden');
+  container.innerHTML = '';
+
+  bankNames.forEach(bank => {
+    const amt = bankBalances[bank];
+    const div = document.createElement('div');
+    div.className = 'bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between';
+    div.innerHTML = `
+      <span class="font-semibold text-slate-200 text-xs flex items-center gap-1.5"><i class="fa-solid fa-wallet text-blue-400"></i> ${escapeHtml(bank)}</span>
+      <span class="font-extrabold ${amt >= 0 ? 'text-emerald-400' : 'text-red-400'} text-xs">${formatCurrency(amt)}</span>
+    `;
+    container.appendChild(div);
+  });
 }
 
 // Render Name-wise Totals Owed to You Card
@@ -1057,6 +1121,7 @@ function renderTransactionList(items) {
   items.forEach(t => {
     const isExpense = t.type === 'expense';
     const color = categoryColors[t.category] || (isExpense ? '#ef4444' : '#10b981');
+    const bankName = t.bank || 'Cash';
 
     let splitHtml = '';
     if (t.split && t.split.friends && t.split.friends.length > 0) {
@@ -1119,13 +1184,16 @@ function renderTransactionList(items) {
               <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full" style="background-color: ${color}20; color: ${color}">
                 ${t.category}
               </span>
+              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                <i class="fa-solid fa-wallet"></i> ${escapeHtml(bankName)}
+              </span>
               <span class="text-[11px] text-slate-500">${t.date}</span>
             </div>
           </div>
         </div>
         <div class="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/80">
           <span class="font-extrabold text-sm ${isExpense ? 'text-red-400' : 'text-emerald-400'}">
-            ${isExpense ? '-' : '+'}${formatCurrency(t.amount)}
+            ${isExpense ? '-' : '+'}${formatCurrency(t.split ? t.split.totalBill : t.amount)}
           </span>
           <div class="flex items-center gap-1.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition">
             <button onclick="duplicateTransaction(${t.id})" class="text-slate-400 hover:text-indigo-400 p-2 min-w-[36px] min-h-[36px] flex items-center justify-center bg-slate-800/50 sm:bg-transparent rounded-lg" title="Duplicate">
@@ -1150,7 +1218,7 @@ function renderTransactionList(items) {
 function renderCharts(items) {
   const expenseItems = items.filter(t => t.type === 'expense');
   const expCatTotals = {};
-  expenseItems.forEach(t => { expCatTotals[t.category] = (expCatTotals[t.category] || 0) + Number(t.amount); });
+  expenseItems.forEach(t => { expCatTotals[t.category] = (expCatTotals[t.category] || 0) + Number(t.split ? t.split.totalBill : t.amount); });
   const expLabels = Object.keys(expCatTotals);
   const expData = Object.values(expCatTotals);
   const expColors = expLabels.map(cat => categoryColors[cat] || '#ef4444');
@@ -1210,7 +1278,7 @@ function renderCharts(items) {
   if (trendChartInstance) trendChartInstance.destroy();
 
   const totalInc = items.filter(t => t.type === 'income').reduce((a, b) => a + Number(b.amount), 0);
-  const totalExp = items.filter(t => t.type === 'expense').reduce((a, b) => a + Number(b.amount), 0);
+  const totalExp = items.filter(t => t.type === 'expense').reduce((a, b) => a + Number(b.split ? b.split.totalBill : b.amount), 0);
 
   trendChartInstance = new Chart(ctxTrend, {
     type: 'bar',
@@ -1242,9 +1310,9 @@ function exportToCSV() {
     alert('No transactions available to export.');
     return;
   }
-  let csvContent = "data:text/csv;charset=utf-8,ID,Type,Description,Amount,Category,Date\n";
+  let csvContent = "data:text/csv;charset=utf-8,ID,Type,Description,Amount,Bank,Category,Date\n";
   transactions.forEach(t => {
-    csvContent += `"${t.id}","${t.type}","${t.description.replace(/"/g, '""')}",${t.amount},"${t.category}","${t.date}"\n`;
+    csvContent += `"${t.id}","${t.type}","${t.description.replace(/"/g, '""')}",${t.split ? t.split.totalBill : t.amount},"${t.bank || 'Cash'}","${t.category}","${t.date}"\n`;
   });
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement("a");
